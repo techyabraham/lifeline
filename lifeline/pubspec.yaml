@@ -1,0 +1,82 @@
+name: lifeline
+description: A secure, fast, and reliable emergency contact platform for Nigeria.
+publish_to: 'none' # private project
+
+version: 1.0.0+1
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management
+  flutter_bloc: ^9.2.1
+  bloc: ^9.2.1
+
+  # Networking
+  http: ^1.2.2
+  dio: ^6.2.1
+
+  # JSON Serialization
+  json_annotation: ^6.3.1
+
+  # Firebase
+  firebase_core: ^2.24.0
+  firebase_analytics: ^10.6.1
+  firebase_crashlytics: ^3.4.2
+
+  # Offline storage
+  hive: ^2.3.0
+  hive_flutter: ^1.2.3
+  path_provider: ^2.0.15
+
+  # Maps & Geolocation
+  google_maps_flutter: ^2.3.0
+  geolocator: ^10.4.0
+
+  # AdMob
+  google_mobile_ads: ^3.3.0
+
+  # Sharing
+  share_plus: ^9.0.0
+
+  # URL Launching
+  url_launcher: ^6.3.1
+
+  # Localization & Fonts
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.18.1
+  google_fonts: ^4.0.4
+
+  # Animations
+  animated_text_kit: ^4.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+  build_runner: ^2.4.6
+  json_serializable: ^6.6.1
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/logo.png
+    - assets/icons/fast.png
+    - assets/icons/verified.png
+    - assets/icons/offline.png
+
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Regular.ttf
+        - asset: assets/fonts/Poppins-SemiBold.ttf
+          weight: 600
