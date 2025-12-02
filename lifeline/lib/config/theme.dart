@@ -1,31 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-final Color primaryColor = Color(0xFF0047AB);
-final Color accentColor = Color(0xFFFF3B30);
-final Color secondaryColor = Colors.white;
-final Color highlightColor = Colors.lime;
+const Color primaryColor = Color(0xFF0047AB);
+const Color accentColor = Color(0xFFFF3B30);
+const Color secondaryColor = Color(0xFFF5F5F5);
+const Color healthHighlight = Color(0xFFCCFF00);
 
 final ThemeData lightTheme = ThemeData(
   primaryColor: primaryColor,
-  colorScheme: ColorScheme.light(
-    primary: primaryColor,
-    secondary: accentColor,
-  ),
-  scaffoldBackgroundColor: Colors.white,
-  fontFamily: GoogleFonts.inter().fontFamily,
-  appBarTheme: AppBarTheme(
-    backgroundColor: primaryColor,
-    foregroundColor: Colors.white,
-  ),
+  scaffoldBackgroundColor: secondaryColor,
+  appBarTheme: AppBarTheme(backgroundColor: primaryColor, elevation: 0),
+  floatingActionButtonTheme: FloatingActionButtonThemeData(backgroundColor: accentColor),
 );
 
 final ThemeData darkTheme = ThemeData(
   brightness: Brightness.dark,
   primaryColor: primaryColor,
-  colorScheme: ColorScheme.dark(
-    primary: primaryColor,
-    secondary: accentColor,
-  ),
-  fontFamily: GoogleFonts.inter().fontFamily,
+  scaffoldBackgroundColor: Colors.black,
+  appBarTheme: AppBarTheme(backgroundColor: primaryColor, elevation: 0),
+  floatingActionButtonTheme: FloatingActionButtonThemeData(backgroundColor: accentColor),
 );
