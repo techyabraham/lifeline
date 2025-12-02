@@ -11,35 +11,35 @@ dependencies:
     sdk: flutter
 
   # State Management
-  flutter_bloc: ^9.2.1
-  bloc: ^9.2.1
+  flutter_bloc: ^9.1.1
+  bloc: ^9.1.0
 
   # Networking
   http: ^1.2.2
-  dio: ^6.2.1
+  dio: ^5.9.0
 
   # JSON Serialization
-  json_annotation: ^6.3.1
+  json_annotation: ^4.9.0
 
   # Firebase
-  firebase_core: ^2.24.0
-  firebase_analytics: ^10.6.1
-  firebase_crashlytics: ^3.4.2
+  firebase_core: ^4.2.1
+  firebase_analytics: ^12.0.4
+  firebase_crashlytics: ^5.0.5
 
   # Offline storage
-  hive: ^2.3.0
-  hive_flutter: ^1.2.3
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
   path_provider: ^2.0.15
 
   # Maps & Geolocation
   google_maps_flutter: ^2.3.0
-  geolocator: ^10.4.0
+  geolocator: ^14.0.2
 
   # AdMob
-  google_mobile_ads: ^3.3.0
+  google_mobile_ads: ^6.0.0
 
   # Sharing
-  share_plus: ^9.0.0
+  share_plus: ^12.0.1
 
   # URL Launching
   url_launcher: ^6.3.1
@@ -47,8 +47,8 @@ dependencies:
   # Localization & Fonts
   flutter_localizations:
     sdk: flutter
-  intl: ^0.18.1
-  google_fonts: ^4.0.4
+  intl: ^0.20.2
+  google_fonts: ^6.3.3
 
   # Animations
   animated_text_kit: ^4.2.2
@@ -56,7 +56,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.0
+  flutter_lints: ^6.0.0
   build_runner: ^2.4.6
   json_serializable: ^6.6.1
 
