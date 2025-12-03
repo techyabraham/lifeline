@@ -1,23 +1,59 @@
+// lib/ui/widgets/call_confirmation.dart
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../models/contact_model.dart';
 
-Future<void> showCallConfirmation(BuildContext context, String agency, String phone, Color color) async {
-  return showDialog(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: Text('Call $agency?'),
+class CallConfirmation extends StatelessWidget {
+  final ContactModel contact;
+
+  const CallConfirmation({Key? key, required this.contact}) : super(key: key);
+
+  Future<void> _makeCall(BuildContext context) async {
+    final Uri callUri = Uri(scheme: 'tel', path: contact.phone);
+    try {
+      if (await canLaunchUrl(callUri)) {
+        await launchUrl(callUri);
+      } else {
+        // Use ScaffoldMessenger only if context is still valid
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cannot make the call')),
+        );
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Call ${contact.agency}?'),
+      content: Text('Do you want to call ${contact.phone}?'),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Cancel')),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(backgroundColor: color),
-          onPressed: () async {
-            final Uri url = Uri(scheme: 'tel', path: phone);
-            if (await canLaunchUrl(url)) await launchUrl(url);
-            Navigator.pop(ctx);
+        TextButton(
+          onPressed: () {
+            if (!context.mounted) return;
+            Navigator.of(context).pop();
           },
-          child: Text('Call'),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor:
+                Colors.blue, // use backgroundColor instead of primary
+          ),
+          onPressed: () async {
+            await _makeCall(context);
+            if (!context.mounted) return;
+            Navigator.of(context).pop();
+          },
+          child: const Text('Call'),
         ),
       ],
-    ),
-  );
+    );
+  }
 }

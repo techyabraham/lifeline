@@ -8,6 +8,8 @@ import '../../repositories/contacts_repository.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class HomeScreen extends StatefulWidget {
+  const HomeScreen({Key? key}) : super(key: key);
+
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
@@ -27,10 +29,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _loadContacts() async {
     try {
-      final contacts = await contactsRepo.getContacts(lga: 'Ikeja'); // default LGA
+      final contacts =
+          await contactsRepo.getContacts(lga: 'Ikeja'); // async gap
+      if (!mounted) return; // Check if widget is still in tree
       setState(() => topContacts = contacts.take(5).toList());
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load contacts')));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Failed to load contacts')));
     }
   }
 
@@ -44,12 +50,20 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onSOSPressed() {
+    if (!mounted) return; // Ensure widget still exists
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         title: Text('Emergency SOS Activated'),
         content: Text('Your emergency contacts will be called shortly'),
-        actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text('OK'))],
+        actions: [
+          TextButton(
+              onPressed: () {
+                if (!mounted) return;
+                Navigator.pop(context);
+              },
+              child: Text('OK'))
+        ],
       ),
     );
   }
@@ -58,7 +72,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final categories = [
       {'title': 'Police', 'icon': Icons.local_police, 'color': Colors.blue},
-      {'title': 'Fire', 'icon': Icons.local_fire_department, 'color': Colors.red},
+      {
+        'title': 'Fire',
+        'icon': Icons.local_fire_department,
+        'color': Colors.red
+      },
       {'title': 'Health', 'icon': Icons.local_hospital, 'color': Colors.green},
       {'title': 'FRSC', 'icon': Icons.traffic, 'color': Colors.yellow.shade700},
     ];
@@ -74,12 +92,15 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: EdgeInsets.all(12),
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
-              children: categories.map((cat) => CategoryButton(
-                title: cat['title'] as String,
-                icon: cat['icon'] as IconData,
-                color: cat['color'] as Color,
-                onTap: () => Navigator.pushNamed(context, '/search', arguments: cat['title']),
-              )).toList(),
+              children: categories
+                  .map((cat) => CategoryButton(
+                        title: cat['title'] as String,
+                        icon: cat['icon'] as IconData,
+                        color: cat['color'] as Color,
+                        onTap: () => Navigator.pushNamed(context, '/search',
+                            arguments: cat['title']),
+                      ))
+                  .toList(),
             ),
           ),
           Expanded(
@@ -87,7 +108,8 @@ class _HomeScreenState extends State<HomeScreen> {
             child: ListView.builder(
               padding: EdgeInsets.all(12),
               itemCount: topContacts.length,
-              itemBuilder: (context, index) => ContactCard(contact: topContacts[index]),
+              itemBuilder: (context, index) =>
+                  ContactCard(contact: topContacts[index]),
             ),
           ),
           if (_bannerAd != null)
@@ -99,7 +121,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
         ],
       ),
-      floatingActionButton: SosButton(color: Colors.red, onPressed: _onSOSPressed),
+      floatingActionButton:
+          SosButton(color: Colors.red, onPressed: _onSOSPressed),
     );
   }
 

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 
 class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({super.key});
+
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
@@ -36,7 +37,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   context: context,
                   builder: (_) => SimpleDialog(
                         title: Text('Select Language'),
-                        children: ['English', 'Pidgin', 'Hausa', 'Yoruba', 'Igbo']
+                        children: [
+                          'English',
+                          'Pidgin',
+                          'Hausa',
+                          'Yoruba',
+                          'Igbo'
+                        ]
                             .map((lang) => SimpleDialogOption(
                                   child: Text(lang),
                                   onPressed: () => Navigator.pop(context, lang),

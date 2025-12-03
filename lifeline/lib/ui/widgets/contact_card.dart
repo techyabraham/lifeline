@@ -1,20 +1,26 @@
+// lib/ui/widgets/contact_card.dart
 import 'package:flutter/material.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:share_plus/share_plus.dart'; // use public API
 import '../../models/contact_model.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../widgets/call_confirmation.dart';
 
 class ContactCard extends StatelessWidget {
   final ContactModel contact;
 
   const ContactCard({Key? key, required this.contact}) : super(key: key);
 
-  void _callNumber(String phone) async {
-    final Uri url = Uri(scheme: 'tel', path: phone);
-    if (await canLaunchUrl(url)) await launchUrl(url);
+  void _shareContact() {
+    final message =
+        '${contact.agency} (${contact.category})\nPhone: ${contact.phone}\nLGA: ${contact.lga}, State: ${contact.state}';
+    // Use Share.share which accepts a String message
+    Share.share(message);
   }
 
-  void _shareContact() {
-    Share.share('${contact.agency} (${contact.category})\nPhone: ${contact.phone}\nLocation: ${contact.lga}, ${contact.state}');
+  void _confirmCall(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => CallConfirmation(contact: contact),
+    );
   }
 
   @override
@@ -42,12 +48,20 @@ class ContactCard extends StatelessWidget {
       child: ListTile(
         leading: Icon(Icons.local_phone, color: color),
         title: Text(contact.agency),
-        subtitle: Text(contact.lga),
+        subtitle: Text('${contact.lga}, ${contact.state}'),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            IconButton(onPressed: _shareContact, icon: Icon(Icons.share)),
-            IconButton(onPressed: () => _callNumber(contact.phone), icon: Icon(Icons.call, color: color)),
+            IconButton(
+              onPressed: _shareContact,
+              icon: Icon(Icons.share),
+              tooltip: 'Share',
+            ),
+            IconButton(
+              onPressed: () => _confirmCall(context),
+              icon: Icon(Icons.call, color: color),
+              tooltip: 'Call',
+            ),
           ],
         ),
       ),

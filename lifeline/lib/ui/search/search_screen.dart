@@ -5,6 +5,8 @@ import '../../models/contact_model.dart';
 import '../widgets/contact_card.dart';
 
 class SearchScreen extends StatefulWidget {
+  const SearchScreen({Key? key}) : super(key: key);
+
   @override
   State<SearchScreen> createState() => _SearchScreenState();
 }
@@ -43,7 +45,8 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final String? category = ModalRoute.of(context)?.settings.arguments as String?;
+    final String? category =
+        ModalRoute.of(context)?.settings.arguments as String?;
 
     return Scaffold(
       appBar: AppBar(title: Text(category ?? 'Search Contacts')),
@@ -55,7 +58,9 @@ class _SearchScreenState extends State<SearchScreen> {
               hint: Text('Select State'),
               value: selectedState,
               isExpanded: true,
-              items: states.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+              items: states
+                  .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                  .toList(),
               onChanged: (val) {
                 setState(() {
                   selectedState = val;
@@ -73,7 +78,9 @@ class _SearchScreenState extends State<SearchScreen> {
               hint: Text('Select LGA'),
               value: selectedLGA,
               isExpanded: true,
-              items: lgas.map((l) => DropdownMenuItem(value: l, child: Text(l))).toList(),
+              items: lgas
+                  .map((l) => DropdownMenuItem(value: l, child: Text(l)))
+                  .toList(),
               onChanged: (val) {
                 setState(() => selectedLGA = val);
                 _searchContacts();
@@ -84,7 +91,8 @@ class _SearchScreenState extends State<SearchScreen> {
             child: ListView.builder(
               padding: EdgeInsets.all(12),
               itemCount: contacts.length,
-              itemBuilder: (context, index) => ContactCard(contact: contacts[index]),
+              itemBuilder: (context, index) =>
+                  ContactCard(contact: contacts[index]),
             ),
           ),
         ],

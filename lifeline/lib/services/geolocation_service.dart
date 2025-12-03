@@ -20,6 +20,10 @@ class GeoLocationService {
       throw Exception('Location permissions are permanently denied.');
     }
 
-    return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    return await Geolocator.getCurrentPosition(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+      ),
+    );
   }
 }

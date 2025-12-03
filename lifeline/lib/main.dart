@@ -30,22 +30,30 @@ void main() async {
   await Hive.initFlutter();
   await Hive.openBox('contacts_cache');
 
-  // Initialize AdMob
-  MobileAds.instance.initialize();
-
   final apiService = ApiService();
   final contactsRepo = ContactsRepository(apiService: apiService);
 
-  runApp(MultiBlocProvider(
-    providers: [
-      BlocProvider<ThemeBloc>(create: (_) => ThemeBloc()),
-      BlocProvider<ContactsBloc>(create: (_) => ContactsBloc(repository: contactsRepo)),
-    ],
-    child: LifeLineApp(),
-  ));
+  runApp(
+    MultiBlocProvider(
+      providers: [
+        BlocProvider<ThemeBloc>(create: (_) => ThemeBloc()),
+        BlocProvider<ContactsBloc>(
+          create: (_) => ContactsBloc(repository: contactsRepo),
+        ),
+      ],
+      child: LifeLineApp(),
+    ),
+  );
+
+  // ⭐ Initialize AdMob AFTER the app has built
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    MobileAds.instance.initialize();
+  });
 }
 
 class LifeLineApp extends StatelessWidget {
+  const LifeLineApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ThemeBloc, ThemeState>(

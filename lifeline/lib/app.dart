@@ -6,6 +6,8 @@ import 'ui/search/search_screen.dart';
 import 'ui/profile/profile_screen.dart';
 
 class LifeLineApp extends StatelessWidget {
+  const LifeLineApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
