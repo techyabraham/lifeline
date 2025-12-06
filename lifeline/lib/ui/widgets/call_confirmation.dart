@@ -6,7 +6,7 @@ import '../../models/contact_model.dart';
 class CallConfirmation extends StatelessWidget {
   final ContactModel contact;
 
-  const CallConfirmation({Key? key, required this.contact}) : super(key: key);
+  const CallConfirmation({super.key, required this.contact});
 
   Future<void> _makeCall(BuildContext context) async {
     final Uri callUri = Uri(scheme: 'tel', path: contact.phone);

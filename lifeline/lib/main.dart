@@ -4,6 +4,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
+// Firebase Options (required)
+import 'firebase_options.dart';
+
 // Screens
 import 'ui/splash/splash_screen.dart';
 import 'ui/onboarding/onboarding_screen.dart';
@@ -20,15 +23,20 @@ import 'services/api_service.dart';
 // Theme
 import 'config/theme.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
-  await Firebase.initializeApp();
+  // Initialize Firebase with platform-specific options
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   // Initialize Hive for offline caching
   await Hive.initFlutter();
   await Hive.openBox('contacts_cache');
+
+  // Initialize Google AdMob
+  await MobileAds.instance.initialize();
 
   final apiService = ApiService();
   final contactsRepo = ContactsRepository(apiService: apiService);
@@ -36,19 +44,12 @@ void main() async {
   runApp(
     MultiBlocProvider(
       providers: [
-        BlocProvider<ThemeBloc>(create: (_) => ThemeBloc()),
-        BlocProvider<ContactsBloc>(
-          create: (_) => ContactsBloc(repository: contactsRepo),
-        ),
+        BlocProvider(create: (_) => ThemeBloc()),
+        BlocProvider(create: (_) => ContactsBloc(repository: contactsRepo)),
       ],
-      child: LifeLineApp(),
+      child: const LifeLineApp(),
     ),
   );
-
-  // ⭐ Initialize AdMob AFTER the app has built
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    MobileAds.instance.initialize();
-  });
 }
 
 class LifeLineApp extends StatelessWidget {
@@ -66,11 +67,11 @@ class LifeLineApp extends StatelessWidget {
           themeMode: themeState.isDarkMode ? ThemeMode.dark : ThemeMode.light,
           initialRoute: '/splash',
           routes: {
-            '/splash': (_) => SplashScreen(),
-            '/onboarding': (_) => OnboardingScreen(),
-            '/home': (_) => HomeScreen(),
-            '/search': (_) => SearchScreen(),
-            '/profile': (_) => ProfileScreen(),
+            '/splash': (_) => const SplashScreen(),
+            '/onboarding': (_) => const OnboardingScreen(),
+            '/home': (_) => const HomeScreen(),
+            '/search': (_) => const SearchScreen(),
+            '/profile': (_) => const ProfileScreen(),
           },
         );
       },

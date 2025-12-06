@@ -7,7 +7,7 @@ import '../widgets/call_confirmation.dart';
 class ContactCard extends StatelessWidget {
   final ContactModel contact;
 
-  const ContactCard({Key? key, required this.contact}) : super(key: key);
+  const ContactCard({super.key, required this.contact});
 
   void _shareContact() {
     final message =

@@ -1,17 +1,32 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
-class SplashScreen extends StatelessWidget {
-  const SplashScreen({Key? key}) : super(key: key);
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+
+    // Navigate after 2 seconds
+    Timer(const Duration(seconds: 2), () {
+      Navigator.pushReplacementNamed(context, '/onboarding');
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
               Color(0xFF0047AB),
-              // Replaced with fromARGB for semi-transparent effect
               Color.fromARGB(200, 0, 123, 255),
             ],
             begin: Alignment.topLeft,
@@ -23,12 +38,12 @@ class SplashScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Image.asset(
-                'assets/logo.png',
+                'assets/images/logo.png',
                 width: 150,
                 height: 150,
               ),
-              SizedBox(height: 20),
-              Text(
+              const SizedBox(height: 20),
+              const Text(
                 'Help when you need it most',
                 style: TextStyle(
                   fontSize: 22,

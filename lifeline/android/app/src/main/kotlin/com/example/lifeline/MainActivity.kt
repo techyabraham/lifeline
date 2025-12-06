@@ -1,4 +1,4 @@
-package com.nglife.lifeline
+package com.example.lifeline
 
 import io.flutter.embedding.android.FlutterActivity
 
