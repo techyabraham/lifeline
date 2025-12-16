@@ -34,6 +34,7 @@ dependencies:
   # Maps & Geolocation
   google_maps_flutter: ^2.3.0
   geolocator: ^14.0.2
+  geocoding: ^2.0.6
 
   # AdMob
   google_mobile_ads: ^6.0.0
@@ -52,6 +53,10 @@ dependencies:
 
   # Animations
   animated_text_kit: ^4.2.2
+  animations: ^2.1.1
+
+  # The Provider
+  provider: ^6.0.5
 
 dev_dependencies:
   flutter_test:
