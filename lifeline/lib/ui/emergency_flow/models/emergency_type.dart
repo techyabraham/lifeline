@@ -1,5 +1,6 @@
 // lib/ui/emergency_flow/models/emergency_type.dart
 import 'package:flutter/material.dart';
+import '../../../config/theme.dart';
 
 class EmergencyType {
   final String id;
@@ -20,27 +21,30 @@ const List<EmergencyType> defaultEmergencyTypes = [
       id: 'hospital',
       title: 'Hospital',
       icon: Icons.local_hospital,
-      color: Colors.red),
+      color: AppColors.brandRed),
   EmergencyType(
       id: 'police',
       title: 'Police',
       icon: Icons.local_police,
-      color: Colors.blue),
+      color: AppColors.brandBlue),
   EmergencyType(
       id: 'fire',
       title: 'Fire',
       icon: Icons.local_fire_department,
-      color: Colors.orange),
+      color: AppColors.brandOrange),
   EmergencyType(
       id: 'amotekun',
       title: 'Amotekun',
       icon: Icons.shield,
-      color: Colors.green),
+      color: AppColors.brandGreen),
   EmergencyType(
-      id: 'frsc', title: 'FRSC', icon: Icons.traffic, color: Colors.yellow),
+      id: 'frsc',
+      title: 'FRSC',
+      icon: Icons.traffic,
+      color: AppColors.brandOrange),
   EmergencyType(
       id: 'my_contacts',
       title: 'My Contacts',
       icon: Icons.contacts,
-      color: Colors.purple),
+      color: AppColors.navy),
 ];

@@ -14,6 +14,7 @@ import 'ui/onboarding/onboarding_screen.dart';
 import 'ui/home/home_screen.dart';
 import 'ui/search/search_screen.dart';
 import 'ui/profile/profile_screen.dart';
+import 'ui/contacts/contacts_screen.dart';
 
 // Emergency flow (Option A)
 import 'ui/emergency_flow/flow_controller.dart';
@@ -87,6 +88,7 @@ class LifeLineApp extends StatelessWidget {
             '/home': (_) => const HomeScreen(),
             '/search': (_) => const SearchScreen(),
             '/profile': (_) => const ProfileScreen(),
+            '/contacts': (_) => const ContactsScreen(),
 
             // Emergency Flow (Primary)
             '/emergency/home': (_) => const ef_home.EmergencyHomeScreen(),

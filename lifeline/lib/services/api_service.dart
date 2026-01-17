@@ -6,60 +6,64 @@ import '../models/emergency_contact.dart';
 class ApiService {
   static const String _base = "https://lfl.tirafemz.com.ng/wp-json/wp/v2";
 
+  Future<List<Map<String, dynamic>>> _fetchPaged(
+    String endpoint, {
+    Map<String, String>? query,
+  }) async {
+    final List<Map<String, dynamic>> all = [];
+    int page = 1;
+    int totalPages = 1;
+
+    do {
+      final qp = <String, String>{
+        'per_page': '100',
+        'page': page.toString(),
+        if (query != null) ...query,
+      };
+      final uri =
+          Uri.parse("$_base/$endpoint").replace(queryParameters: qp);
+      final res = await http.get(uri);
+      if (res.statusCode != 200) {
+        throw Exception('Failed to load $endpoint');
+      }
+
+      final List data = json.decode(res.body);
+      all.addAll(List<Map<String, dynamic>>.from(data));
+
+      final header = res.headers['x-wp-totalpages'];
+      totalPages = header != null ? int.tryParse(header) ?? page : page;
+      page++;
+    } while (page <= totalPages);
+
+    return all;
+  }
+
   // --------------------------------------------------
   // SERVICE CATEGORIES (taxonomy: service_category)
   // --------------------------------------------------
   Future<List<Map<String, dynamic>>> fetchServiceCategories() async {
-    final url = Uri.parse("$_base/service_category?per_page=100");
-
-    final res = await http.get(url);
-    if (res.statusCode != 200) {
-      throw Exception('Failed to load service categories');
-    }
-
-    return List<Map<String, dynamic>>.from(json.decode(res.body));
+    return _fetchPaged('service_category');
   }
 
   // --------------------------------------------------
   // STATES (taxonomy: state)
   // --------------------------------------------------
   Future<List<Map<String, dynamic>>> fetchStates() async {
-    final url = Uri.parse("$_base/state?per_page=200");
-
-    final res = await http.get(url);
-    if (res.statusCode != 200) {
-      throw Exception('Failed to load states');
-    }
-
-    return List<Map<String, dynamic>>.from(json.decode(res.body));
+    return _fetchPaged('state');
   }
 
   // --------------------------------------------------
   // LGAs (taxonomy: lga)
   // --------------------------------------------------
   Future<List<Map<String, dynamic>>> fetchLgas() async {
-    final url = Uri.parse("$_base/lga?per_page=500");
-
-    final res = await http.get(url);
-    if (res.statusCode != 200) {
-      throw Exception('Failed to load LGAs');
-    }
-
-    return List<Map<String, dynamic>>.from(json.decode(res.body));
+    return _fetchPaged('lga');
   }
 
   // --------------------------------------------------
   // LGAs BY STATE (if parent relationship exists)
   // --------------------------------------------------
   Future<List<Map<String, dynamic>>> fetchLgasByState(int stateId) async {
-    final url = Uri.parse("$_base/lga?parent=$stateId&per_page=200");
-
-    final res = await http.get(url);
-    if (res.statusCode != 200) {
-      throw Exception('Failed to load LGAs for state');
-    }
-
-    return List<Map<String, dynamic>>.from(json.decode(res.body));
+    return _fetchPaged('lga', query: {'parent': stateId.toString()});
   }
 
   // --------------------------------------------------

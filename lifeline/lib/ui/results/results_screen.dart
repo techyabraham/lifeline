@@ -19,17 +19,19 @@ class _ResultsScreenState extends State<ResultsScreen> {
 
   bool _loading = true;
   String? _error;
-  bool _notifyContacts = false;
 
   List<EmergencyContact> _contacts = [];
+  final Map<int, double> _distanceKm = {};
 
+  bool _notifyContacts = false;
+
+  // Route arguments
   int? categoryId;
   String? categoryName;
   int? lgaId;
   String? lgaName;
   int? stateId;
   String? stateName;
-
   double? userLat;
   double? userLng;
 
@@ -46,6 +48,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
 
     categoryId = args['categoryId'];
     categoryName = args['categoryName'];
+
     lgaId = args['lgaId'];
     lgaName = args['lgaName'];
     stateId = args['stateId'];
@@ -71,17 +74,19 @@ class _ResultsScreenState extends State<ResultsScreen> {
     setState(() {
       _loading = true;
       _error = null;
+      _distanceKm.clear();
     });
 
     try {
       final fetched = await _api.fetchContacts(
-        serviceCategoryId: categoryId, // ✅ FIXED
+        serviceCategoryId: categoryId,
         stateId: stateId,
         lgaId: lgaId,
       );
 
       for (final c in fetched) {
         double dist = double.infinity;
+
         if (userLat != null &&
             userLng != null &&
             c.latitude != null &&
@@ -94,24 +99,20 @@ class _ResultsScreenState extends State<ResultsScreen> {
               ) /
               1000;
         }
-        (c as dynamic).distanceKm = dist;
+
+        _distanceKm[c.id] = dist;
       }
 
-      fetched.sort((a, b) {
-        final da = (a as dynamic).distanceKm as double? ?? double.infinity;
-        final db = (b as dynamic).distanceKm as double? ?? double.infinity;
-        return da.compareTo(db);
-      });
+      fetched.sort((a, b) => (_distanceKm[a.id] ?? double.infinity)
+          .compareTo(_distanceKm[b.id] ?? double.infinity));
 
-      if (!mounted) return;
       setState(() {
         _contacts = fetched;
         _loading = false;
       });
     } catch (e) {
-      if (!mounted) return;
       setState(() {
-        _error = 'Failed to load providers';
+        _error = 'Failed to load emergency providers';
         _loading = false;
       });
     }
@@ -120,20 +121,23 @@ class _ResultsScreenState extends State<ResultsScreen> {
   Future<void> _dial(EmergencyContact c) async {
     final uri = Uri(scheme: 'tel', path: c.phoneNumber);
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) =>
-            CallingScreen(providerName: c.name, phone: c.phoneNumber),
-      ),
-    );
-
-    await Future.delayed(const Duration(milliseconds: 300));
-
     if (await canLaunchUrl(uri)) {
+      // Optional: trigger notifications here if enabled
+      if (_notifyContacts) {
+        // hook for SMS / server notification
+      }
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              CallingScreen(providerName: c.name, phone: c.phoneNumber),
+        ),
+      );
+
+      await Future.delayed(const Duration(milliseconds: 250));
       await launchUrl(uri);
     } else {
-      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Unable to place call')),
       );
@@ -166,85 +170,81 @@ class _ResultsScreenState extends State<ResultsScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text('Nearest • $title')),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            children: [
-              Card(
-                child: ListTile(
-                  leading: const Icon(Icons.place),
-                  title: Text(lgaName ?? stateName ?? 'Unknown location'),
-                  subtitle: const Text('Sorted by distance'),
-                  trailing: Row(
+      body: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.place),
+                title: Text(lgaName ?? stateName ?? 'Unknown location'),
+                subtitle: const Text('Sorted by distance'),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('Notify'),
+                    Switch(
+                      value: _notifyContacts,
+                      onChanged: (v) => setState(() => _notifyContacts = v),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            if (_loading)
+              const Expanded(
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (_error != null)
+              Expanded(
+                child: Center(
+                  child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text('Notify'),
-                      Switch(
-                        value: _notifyContacts,
-                        onChanged: (v) => setState(() => _notifyContacts = v),
+                      Text(_error!, style: const TextStyle(color: Colors.red)),
+                      const SizedBox(height: 8),
+                      ElevatedButton(
+                        onPressed: _loadContacts,
+                        child: const Text('Retry'),
                       ),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              if (_loading)
-                const Expanded(
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              else if (_error != null)
-                Expanded(
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(_error!,
-                            style: const TextStyle(color: Colors.red)),
-                        const SizedBox(height: 8),
-                        ElevatedButton(
-                          onPressed: _loadContacts,
-                          child: const Text('Retry'),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              else if (_contacts.isEmpty)
-                const Expanded(
-                  child: Center(
-                    child: Text('No emergency providers found here'),
-                  ),
-                )
-              else
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: _contacts.length,
-                    itemBuilder: (_, index) {
-                      final c = _contacts[index];
-                      final dist = (c as dynamic).distanceKm as double? ??
-                          double.infinity;
-
-                      final emoji = index == 0
-                          ? '🥇'
-                          : index == 1
-                              ? '🥈'
-                              : index == 2
-                                  ? '🥉'
-                                  : '';
-
-                      return _FacilityCard(
-                        contact: c,
-                        distanceKm: dist,
-                        rankEmoji: emoji,
-                        onCall: () => _dial(c),
-                        onMap: () => _openMaps(c),
-                      );
-                    },
-                  ),
+              )
+            else if (_contacts.isEmpty)
+              const Expanded(
+                child: Center(
+                  child: Text('No emergency providers found'),
                 ),
-            ],
-          ),
+              )
+            else
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _contacts.length,
+                  itemBuilder: (_, index) {
+                    final c = _contacts[index];
+                    final dist = _distanceKm[c.id];
+
+                    final emoji = index == 0
+                        ? '🥇'
+                        : index == 1
+                            ? '🥈'
+                            : index == 2
+                                ? '🥉'
+                                : '';
+
+                    return _FacilityCard(
+                      contact: c,
+                      distanceKm: dist,
+                      rankEmoji: emoji,
+                      onCall: () => _dial(c),
+                      onMap: () => _openMaps(c),
+                    );
+                  },
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -279,16 +279,15 @@ class _FacilityCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        contact.name,
-                        style: const TextStyle(
-                            fontSize: 17, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          contact.name,
+                          style: const TextStyle(
+                              fontSize: 17, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 6),
+                        Row(children: [
                           const Icon(Icons.navigation,
                               size: 14, color: Colors.green),
                           const SizedBox(width: 4),
@@ -307,37 +306,29 @@ class _FacilityCard extends StatelessWidget {
                                 color: Colors.green.shade50,
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: Row(
-                                children: const [
-                                  Icon(Icons.verified,
-                                      size: 14, color: Colors.green),
-                                  SizedBox(width: 4),
-                                  Text('Verified',
-                                      style: TextStyle(
-                                          fontSize: 12, color: Colors.green)),
-                                ],
-                              ),
+                              child: const Row(children: [
+                                Icon(Icons.verified,
+                                    size: 14, color: Colors.green),
+                                SizedBox(width: 4),
+                                Text('Verified',
+                                    style: TextStyle(
+                                        fontSize: 12, color: Colors.green)),
+                              ]),
                             ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        contact.address,
-                        style: const TextStyle(
-                            fontSize: 12, color: Colors.black54),
-                      ),
-                      if (contact.secondaryPhone != null &&
-                          contact.secondaryPhone!.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Text(
-                            'Alt: ${contact.secondaryPhone}',
+                        ]),
+                        const SizedBox(height: 6),
+                        Text(contact.address,
                             style: const TextStyle(
-                                fontSize: 12, color: Colors.black45),
+                                fontSize: 12, color: Colors.black54)),
+                        if (contact.secondaryPhone != null &&
+                            contact.secondaryPhone!.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text('Alt: ${contact.secondaryPhone}',
+                                style: const TextStyle(
+                                    fontSize: 12, color: Colors.black45)),
                           ),
-                        ),
-                    ],
-                  ),
+                      ]),
                 ),
                 Text(rankEmoji, style: const TextStyle(fontSize: 28)),
               ],
@@ -361,7 +352,7 @@ class _FacilityCard extends StatelessWidget {
                   child: const Icon(Icons.map),
                 ),
               ],
-            ),
+            )
           ],
         ),
       ),

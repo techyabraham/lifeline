@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../config/theme.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -20,23 +21,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Profile & Settings')),
+      appBar: AppBar(title: const Text('Profile & Settings')),
       body: ListView(
-        padding: EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         children: [
+          Card(
+            child: ListTile(
+              leading: const CircleAvatar(
+                backgroundColor: AppColors.brandBlue,
+                child: Icon(Icons.person, color: Colors.white),
+              ),
+              title: const Text('Guest User'),
+              subtitle: const Text('Tap to set up your profile'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {},
+            ),
+          ),
+          const SizedBox(height: 8),
           SwitchListTile(
-            title: Text('Dark Mode'),
+            title: const Text('Dark Mode'),
             value: darkMode,
             onChanged: (val) => setState(() => darkMode = val),
           ),
           ListTile(
-            title: Text('Language'),
+            title: const Text('Language'),
             subtitle: Text(language),
             onTap: () async {
               final selected = await showDialog<String>(
                   context: context,
                   builder: (_) => SimpleDialog(
-                        title: Text('Select Language'),
+                        title: const Text('Select Language'),
                         children: [
                           'English',
                           'Pidgin',
@@ -54,11 +68,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             },
           ),
           ListTile(
-            title: Text('Saved Locations'),
+            title: const Text('Saved Locations'),
             onTap: () {}, // implement saved locations
           ),
-          SizedBox(height: 12),
-          Text('App Info: Version 1.0.0'),
+          const SizedBox(height: 12),
+          const Text('App Info: Version 1.0.0',
+              style: TextStyle(color: AppColors.muted)),
         ],
       ),
     );

@@ -1,6 +1,6 @@
 // lib/ui/search/search_screen.dart
 import 'package:flutter/material.dart';
-
+import '../../config/theme.dart';
 import '../../services/api_service.dart';
 import '../../repositories/contacts_repository.dart';
 import '../../models/emergency_contact.dart';
@@ -130,71 +130,90 @@ class _SearchScreenState extends State<SearchScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(category ?? 'Search Emergency Contacts'),
+        title: Text(category ?? 'Select Location'),
       ),
-      body: Column(
-        children: [
-          // STATE DROPDOWN
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: DropdownButtonFormField<int>(
-              decoration: const InputDecoration(labelText: 'Select State'),
-              value: selectedStateId,
-              items: states
-                  .map(
-                    (s) => DropdownMenuItem<int>(
-                      value: s['id'],
-                      child: Text(s['name']),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    DropdownButtonFormField<int>(
+                      decoration: const InputDecoration(labelText: 'Select State'),
+                      value: selectedStateId,
+                      items: states
+                          .map(
+                            (s) => DropdownMenuItem<int>(
+                              value: s['id'],
+                              child: Text(s['name']),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (val) {
+                        setState(() {
+                          selectedStateId = val;
+                          selectedLgaId = null;
+                          contacts = [];
+                        });
+                      },
                     ),
-                  )
-                  .toList(),
-              onChanged: (val) {
-                setState(() {
-                  selectedStateId = val;
-                  selectedLgaId = null;
-                  contacts = [];
-                });
-              },
-            ),
-          ),
-
-          // LGA DROPDOWN
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: DropdownButtonFormField<int>(
-              decoration: const InputDecoration(labelText: 'Select LGA'),
-              value: selectedLgaId,
-              items: _filteredLgas
-                  .map(
-                    (l) => DropdownMenuItem<int>(
-                      value: l['id'],
-                      child: Text(l['name']),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<int>(
+                      decoration: const InputDecoration(labelText: 'Select LGA'),
+                      value: selectedLgaId,
+                      items: _filteredLgas
+                          .map(
+                            (l) => DropdownMenuItem<int>(
+                              value: l['id'],
+                              child: Text(l['name']),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (val) {
+                        setState(() => selectedLgaId = val);
+                        _searchContacts();
+                      },
                     ),
-                  )
-                  .toList(),
-              onChanged: (val) {
-                setState(() => selectedLgaId = val);
-                _searchContacts();
-              },
+                  ],
+                ),
+              ),
             ),
-          ),
-
-          // RESULTS
-          Expanded(
-            child: loading
-                ? const Center(child: CircularProgressIndicator())
-                : error != null
-                    ? Center(child: Text(error!))
-                    : contacts.isEmpty
-                        ? const Center(child: Text('No contacts found'))
-                        : ListView.builder(
-                            padding: const EdgeInsets.all(12),
-                            itemCount: contacts.length,
-                            itemBuilder: (context, index) =>
-                                ContactCard(contact: contacts[index]),
-                          ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Expanded(
+              child: loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : error != null
+                      ? Center(child: Text(error!))
+                      : contacts.isEmpty
+                          ? const Center(child: Text('No contacts found'))
+                          : ListView.builder(
+                              padding: const EdgeInsets.only(top: 8),
+                              itemCount: contacts.length,
+                              itemBuilder: (context, index) =>
+                                  ContactCard(contact: contacts[index]),
+                            ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              height: 54,
+              width: double.infinity,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: const Text('Ad goes here'),
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.pushNamed(context, '/emergency/location'),
+        child: const Icon(Icons.sos),
       ),
     );
   }

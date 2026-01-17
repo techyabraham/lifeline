@@ -1,7 +1,7 @@
 // lib/ui/onboarding/onboarding_screen.dart
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../config/theme.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -18,28 +18,25 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   final List<_OnboardSlide> slides = [
     _OnboardSlide(
-      title: 'Help when you need it most',
+      title: 'Auto Location Detection',
       subtitle:
-          'One tap to call — location-aware emergency contacts across Nigeria.',
-      icon: Icons.warning_amber_rounded,
-      bgStart: Color(0xFF0047AB),
-      bgEnd: Color(0xFF0066FF),
+          'We detect your area so you can reach help with fewer steps.',
+      icon: Icons.my_location,
+      color: AppColors.brandBlue,
     ),
     _OnboardSlide(
-      title: 'Fast, clear actions',
+      title: 'Select Your Area',
       subtitle:
-          'Large touch targets and color-coded emergency types — no confusion under stress.',
-      icon: Icons.flash_on_rounded,
-      bgStart: Color(0xFF0A84FF),
-      bgEnd: Color(0xFF00C2FF),
+          'Pick your state and local government if auto detection fails.',
+      icon: Icons.map_outlined,
+      color: AppColors.brandGreen,
     ),
     _OnboardSlide(
-      title: 'Offline & verified',
+      title: 'Get Help Fast',
       subtitle:
-          'Cached local contacts per LGA and verified emergency numbers you can trust.',
-      icon: Icons.verified_user_rounded,
-      bgStart: Color(0xFF12A572),
-      bgEnd: Color(0xFF62D39F),
+          'Tap a service type to call the closest verified provider.',
+      icon: Icons.local_hospital_outlined,
+      color: AppColors.brandRed,
     ),
   ];
 
@@ -47,16 +44,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   void initState() {
     super.initState();
 
-    // Simple pulsing animation for CTA
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
       lowerBound: 0.95,
       upperBound: 1.06,
     )..repeat(reverse: true);
-
-    // Enter immersive sticky mode on onboarding (Android): nav hidden, comes back on swipe
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
     _pageController.addListener(() {
       final newPage = _pageController.page?.round() ?? 0;
@@ -68,7 +61,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   @override
   void dispose() {
-    // Restore normal UI overlays when leaving onboarding
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     _pageController.dispose();
     _pulseController.dispose();
@@ -77,20 +69,25 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   void _next() {
     if (_page < slides.length - 1) {
-      _pageController.animateToPage(_page + 1,
-          duration: const Duration(milliseconds: 360), curve: Curves.easeOut);
+      _pageController.animateToPage(
+        _page + 1,
+        duration: const Duration(milliseconds: 360),
+        curve: Curves.easeOut,
+      );
     } else {
       _finish();
     }
   }
 
   void _skip() {
-    _pageController.animateToPage(slides.length - 1,
-        duration: const Duration(milliseconds: 360), curve: Curves.easeOut);
+    _pageController.animateToPage(
+      slides.length - 1,
+      duration: const Duration(milliseconds: 360),
+      curve: Curves.easeOut,
+    );
   }
 
   void _finish() {
-    // Restore system mode and navigate to home
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     Navigator.pushReplacementNamed(context, '/home');
   }
@@ -103,7 +100,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       width: isActive ? 26 : 8,
       height: 8,
       decoration: BoxDecoration(
-        color: isActive ? Colors.white : Colors.white70,
+        color: isActive ? AppColors.brandBlue : AppColors.border,
         borderRadius: BorderRadius.circular(12),
       ),
     );
@@ -111,89 +108,103 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context)
-        .viewPadding
-        .bottom; // ensures we sit above navigation
+    final bottomInset = MediaQuery.of(context).viewPadding.bottom;
     final safeBottom = (bottomInset < 12) ? 16.0 : bottomInset + 8.0;
 
     return Scaffold(
       body: Stack(
         children: [
-          // PageView with gradient backgrounds per slide
           PageView.builder(
             controller: _pageController,
             itemCount: slides.length,
             itemBuilder: (context, idx) {
               final s = slides[idx];
-              return Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [s.bgStart, s.bgEnd],
-                  ),
-                ),
-                child: SafeArea(
-                  top: true,
-                  bottom: false, // we'll control bottom padding manually
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 22),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        const SizedBox(height: 36),
-                        // Big icon
-                        Container(
-                          width: 160,
-                          height: 160,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.12),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: Icon(s.icon, size: 88, color: Colors.white),
+              return SafeArea(
+                top: true,
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 22),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 18),
+                      Image.asset(
+                        'assets/images/logo.png',
+                        width: 42,
+                        height: 42,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'LifeLine',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 24),
+                      Card(
+                        elevation: 1.2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(22),
+                          child: Column(
+                            children: [
+                              Container(
+                                width: 120,
+                                height: 120,
+                                decoration: BoxDecoration(
+                                  color: s.color.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                                child: Icon(
+                                  s.icon,
+                                  size: 60,
+                                  color: s.color,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              Text(
+                                s.title,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                s.subtitle,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.muted,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 28),
-                        Text(s.title,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 26,
-                                fontWeight: FontWeight.w700)),
-                        const SizedBox(height: 12),
-                        Text(s.subtitle,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                                color: Colors.white70, fontSize: 15)),
-                        const Spacer(),
-                        // Page indicators
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children:
-                              List.generate(slides.length, _buildIndicator),
-                        ),
-                        const SizedBox(height: 20 + 4),
-                      ],
-                    ),
+                      ),
+                      const Spacer(),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children:
+                            List.generate(slides.length, _buildIndicator),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
                   ),
                 ),
               );
             },
           ),
-
-          // Top-right Skip
           Positioned(
             right: 18,
             top: MediaQuery.of(context).viewPadding.top + 8,
             child: TextButton(
               onPressed: _skip,
               child:
-                  const Text('Skip', style: TextStyle(color: Colors.white70)),
+                  const Text('Skip', style: TextStyle(color: AppColors.muted)),
             ),
           ),
-
-          // Bottom controls (Next / Get started) — placed above nav using safeBottom
           Positioned(
             left: 18,
             right: 18,
@@ -201,41 +212,27 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Next / Get started button (pulsing)
                 ScaleTransition(
                   scale: _pulseController,
                   child: SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: _next,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
-                        elevation: 6,
-                        backgroundColor: Colors.white,
-                      ),
                       child: Text(
                         _page == slides.length - 1 ? 'Get Started' : 'Next',
                         style: const TextStyle(
-                            color: Colors.black87,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 10),
-                // Secondary button (learn more / privacy) - subtle
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.pushNamed(context, '/profile'),
-                      child: const Text('Learn more',
-                          style: TextStyle(color: Colors.white70)),
-                    ),
-                  ],
+                TextButton(
+                  onPressed: () => Navigator.pushNamed(context, '/profile'),
+                  child: const Text('Learn more',
+                      style: TextStyle(color: AppColors.muted)),
                 ),
               ],
             ),
@@ -246,19 +243,16 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 }
 
-// small model for slides
 class _OnboardSlide {
   final String title;
   final String subtitle;
   final IconData icon;
-  final Color bgStart;
-  final Color bgEnd;
+  final Color color;
 
   _OnboardSlide({
     required this.title,
     required this.subtitle,
     required this.icon,
-    required this.bgStart,
-    required this.bgEnd,
+    required this.color,
   });
 }

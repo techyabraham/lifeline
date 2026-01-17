@@ -1,9 +1,8 @@
 // lib/ui/emergency_flow/screens/location_screen.dart
-
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart' as geo;
-
+import 'package:geolocator/geolocator.dart';
+import '../../../config/theme.dart';
 import '../../../services/api_service.dart';
 
 class EmergencyLocationScreen extends StatefulWidget {
@@ -20,7 +19,7 @@ class _EmergencyLocationScreenState extends State<EmergencyLocationScreen> {
   bool locating = true;
   bool loadingLookups = true;
 
-  String status = "Detecting location…";
+  String status = 'Detecting location...';
 
   double? detectedLat;
   double? detectedLng;
@@ -28,11 +27,9 @@ class _EmergencyLocationScreenState extends State<EmergencyLocationScreen> {
   String? detectedStateName;
   String? detectedLgaName;
 
-  // Lookup tables
   List<Map<String, dynamic>> states = [];
   List<Map<String, dynamic>> lgas = [];
 
-  // Selected manually
   int? selectedStateId;
   int? selectedLgaId;
   String? selectedStateName;
@@ -44,9 +41,6 @@ class _EmergencyLocationScreenState extends State<EmergencyLocationScreen> {
     _loadLookups();
   }
 
-  // ------------------------------------------------------------
-  // STEP 1 → LOAD WP STATES + LGAs
-  // ------------------------------------------------------------
   Future<void> _loadLookups() async {
     try {
       final s = await _api.fetchStates();
@@ -55,23 +49,19 @@ class _EmergencyLocationScreenState extends State<EmergencyLocationScreen> {
       states = List<Map<String, dynamic>>.from(s);
       lgas = List<Map<String, dynamic>>.from(g);
     } catch (e) {
-      debugPrint("Lookup load failed: $e");
+      debugPrint('Lookup load failed: $e');
       states = [];
       lgas = [];
     }
 
     setState(() => loadingLookups = false);
-
     _autoLocate();
   }
 
-  // ------------------------------------------------------------
-  // STEP 2 → AUTO-DETECT GPS LOCATION
-  // ------------------------------------------------------------
   Future<void> _autoLocate() async {
     setState(() {
       locating = true;
-      status = "Detecting location…";
+      status = 'Detecting location...';
     });
 
     try {
@@ -79,7 +69,7 @@ class _EmergencyLocationScreenState extends State<EmergencyLocationScreen> {
       if (!enabled) {
         setState(() {
           locating = false;
-          status = "Location services are off. Select manually below.";
+          status = 'Location services are off. Select manually below.';
         });
         return;
       }
@@ -93,7 +83,7 @@ class _EmergencyLocationScreenState extends State<EmergencyLocationScreen> {
           perm == LocationPermission.deniedForever) {
         setState(() {
           locating = false;
-          status = "Permission denied. Select manually below.";
+          status = 'Permission denied. Select manually below.';
         });
         return;
       }
@@ -108,71 +98,61 @@ class _EmergencyLocationScreenState extends State<EmergencyLocationScreen> {
 
       await _reverseGeocode(pos.latitude, pos.longitude);
     } catch (e) {
-      debugPrint("Auto-locate failed: $e");
+      debugPrint('Auto-locate failed: $e');
       setState(() {
         locating = false;
-        status = "Auto-detection failed. Select manually.";
+        status = 'Auto-detection failed. Select manually.';
       });
     }
   }
 
-  // ------------------------------------------------------------
-  // STEP 3 → REVERSE GEOCODE → MATCH TO WP TAXONOMY
-  // ------------------------------------------------------------
   Future<void> _reverseGeocode(double lat, double lng) async {
     try {
       final placemarks = await geo.placemarkFromCoordinates(lat, lng);
-      if (placemarks.isEmpty) throw "No placemarks";
+      if (placemarks.isEmpty) throw 'No placemarks';
 
       final p = placemarks.first;
 
-      String? guessLGA = p.subAdministrativeArea;
+      String? guessLga = p.subAdministrativeArea;
       String? guessState = p.administrativeArea;
 
-      // Fallback cases
-      if ((guessLGA == null || guessLGA.isEmpty) &&
+      if ((guessLga == null || guessLga.isEmpty) &&
           (p.locality != null && p.locality!.isNotEmpty)) {
-        guessLGA = p.locality;
+        guessLga = p.locality;
       }
 
-      detectedLgaName = guessLGA;
+      detectedLgaName = guessLga;
       detectedStateName = guessState;
 
-      // Match to WP list
       _matchLocationToTaxonomy();
     } catch (e) {
-      debugPrint("Reverse geocode failed: $e");
+      debugPrint('Reverse geocode failed: $e');
       setState(() {
         locating = false;
-        status = "Coordinates found but cannot detect LGA. Select manually.";
+        status = 'Coordinates found but cannot detect LGA. Select manually.';
       });
     }
   }
 
-  // ------------------------------------------------------------
-  // STEP 4 → MATCH “Ikeja”, “Ogun”, etc → WP taxonomy
-  // ------------------------------------------------------------
   void _matchLocationToTaxonomy() {
     int? foundStateId;
     int? foundLgaId;
 
-    // Match state
     if (detectedStateName != null) {
       final sLower = detectedStateName!.toLowerCase();
       for (var s in states) {
-        if ((s["name"] ?? "").toString().toLowerCase().contains(sLower)) {
-          foundStateId = s["id"];
+        if ((s['name'] ?? '').toString().toLowerCase().contains(sLower)) {
+          foundStateId = s['id'];
           break;
         }
       }
     }
 
-    // Match LGA
     if (detectedLgaName != null) {
       final lLower = detectedLgaName!.toLowerCase();
       for (var g in lgas) {
-        if ((g["name"] ?? "").toString().toLowerCase().contains(lLower)) {
-          foundLgaId = g["id"];
+        if ((g['name'] ?? '').toString().toLowerCase().contains(lLower)) {
+          foundLgaId = g['id'];
           break;
         }
       }
@@ -183,33 +163,29 @@ class _EmergencyLocationScreenState extends State<EmergencyLocationScreen> {
       locating = false;
 
       status = (foundStateId != null || foundLgaId != null)
-          ? "Detected: ${detectedLgaName ?? ''}, ${detectedStateName ?? ''}"
-          : "Detected but unmatched; please correct manually.";
+          ? 'Detected: ${detectedLgaName ?? ''}, ${detectedStateName ?? ''}'
+          : 'Detected but unmatched; please correct manually.';
     });
   }
 
-  // Helper → store matched selections
   void selectingForContinue(int? stId, int? lgId) {
     selectedStateId = stId;
     selectedLgaId = lgId;
 
     if (stId != null) {
       selectedStateName =
-          states.firstWhere((e) => e["id"] == stId)["name"] as String?;
+          states.firstWhere((e) => e['id'] == stId)['name'] as String?;
     }
     if (lgId != null) {
       selectedLgaName =
-          lgas.firstWhere((e) => e["id"] == lgId)["name"] as String?;
+          lgas.firstWhere((e) => e['id'] == lgId)['name'] as String?;
     }
   }
 
-  // ------------------------------------------------------------
-  // STEP 5 → CONTINUE (AUTO OR MANUAL)
-  // ------------------------------------------------------------
   void _continue() {
     if (selectedStateId == null || selectedLgaId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please select State & LGA")),
+        const SnackBar(content: Text('Please select State & LGA')),
       );
       return;
     }
@@ -218,48 +194,62 @@ class _EmergencyLocationScreenState extends State<EmergencyLocationScreen> {
       context,
       '/emergency/select',
       arguments: {
-        "stateId": selectedStateId,
-        "stateName": selectedStateName,
-        "lgaId": selectedLgaId,
-        "lgaName": selectedLgaName,
-        "latitude": detectedLat,
-        "longitude": detectedLng,
+        'stateId': selectedStateId,
+        'stateName': selectedStateName,
+        'lgaId': selectedLgaId,
+        'lgaName': selectedLgaName,
+        'latitude': detectedLat,
+        'longitude': detectedLng,
       },
     );
   }
 
-  // ------------------------------------------------------------
-  // UI
-  // ------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Detect Location")),
-      body: Padding(
+      appBar: AppBar(title: const Text('Auto Location Detection')),
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // AUTO-DETECT CARD
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    const Icon(Icons.gps_fixed, size: 30, color: Colors.red),
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: AppColors.brandBlue.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(Icons.gps_fixed,
+                          color: AppColors.brandBlue),
+                    ),
                     const SizedBox(width: 12),
-                    Expanded(child: Text(status)),
+                    Expanded(
+                      child: Text(
+                        status,
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ),
                     if (locating)
-                      const CircularProgressIndicator(strokeWidth: 2),
+                      const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
                   ],
                 ),
               ),
             ),
-
-            const SizedBox(height: 20),
-            const Text("OR", style: TextStyle(color: Colors.black54)),
-            const SizedBox(height: 20),
-
-            // MANUAL CARD
+            const SizedBox(height: 16),
+            const Text(
+              'Select Your Area',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 10),
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -275,36 +265,37 @@ class _EmergencyLocationScreenState extends State<EmergencyLocationScreen> {
                           DropdownButtonFormField<int>(
                             value: selectedStateId,
                             decoration:
-                                const InputDecoration(labelText: "State"),
+                                const InputDecoration(labelText: 'Select State'),
                             items: states
                                 .map((s) => DropdownMenuItem<int>(
-                                      value: s["id"],
-                                      child: Text(s["name"] ?? ""),
+                                      value: s['id'],
+                                      child: Text(s['name'] ?? ''),
                                     ))
                                 .toList(),
                             onChanged: (v) {
                               setState(() {
                                 selectedStateId = v;
                                 selectedStateName = states
-                                    .firstWhere((e) => e["id"] == v)["name"];
+                                    .firstWhere((e) => e['id'] == v)['name'];
                               });
                             },
                           ),
                           const SizedBox(height: 12),
                           DropdownButtonFormField<int>(
                             value: selectedLgaId,
-                            decoration: const InputDecoration(labelText: "LGA"),
+                            decoration:
+                                const InputDecoration(labelText: 'Select LGA'),
                             items: lgas
                                 .map((g) => DropdownMenuItem<int>(
-                                      value: g["id"],
-                                      child: Text(g["name"] ?? ""),
+                                      value: g['id'],
+                                      child: Text(g['name'] ?? ''),
                                     ))
                                 .toList(),
                             onChanged: (v) {
                               setState(() {
                                 selectedLgaId = v;
                                 selectedLgaName = lgas
-                                    .firstWhere((e) => e["id"] == v)["name"];
+                                    .firstWhere((e) => e['id'] == v)['name'];
                               });
                             },
                           ),
@@ -314,14 +305,14 @@ class _EmergencyLocationScreenState extends State<EmergencyLocationScreen> {
                               Expanded(
                                 child: OutlinedButton(
                                   onPressed: _autoLocate,
-                                  child: const Text("Try again"),
+                                  child: const Text('Try again'),
                                 ),
                               ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: ElevatedButton(
                                   onPressed: _continue,
-                                  child: const Text("Continue"),
+                                  child: const Text('Next'),
                                 ),
                               ),
                             ],
@@ -330,12 +321,11 @@ class _EmergencyLocationScreenState extends State<EmergencyLocationScreen> {
                       ),
               ),
             ),
-            const SizedBox(height: 20),
-
+            const SizedBox(height: 12),
             if (detectedLat != null)
               Text(
-                "GPS: ${detectedLat!.toStringAsFixed(5)}, ${detectedLng!.toStringAsFixed(5)}",
-                style: const TextStyle(fontSize: 12, color: Colors.black54),
+                'GPS: ${detectedLat!.toStringAsFixed(5)}, ${detectedLng!.toStringAsFixed(5)}',
+                style: const TextStyle(fontSize: 12, color: AppColors.muted),
               ),
           ],
         ),

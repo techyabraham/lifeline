@@ -1,5 +1,6 @@
 // lib/ui/emergency_flow/screens/calling_screen.dart
 import 'package:flutter/material.dart';
+import '../../../config/theme.dart';
 
 class EmergencyCallingScreen extends StatefulWidget {
   final String providerName;
@@ -24,7 +25,7 @@ class _EmergencyCallingScreenState extends State<EmergencyCallingScreen>
     super.initState();
     _pulseCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 850),
+      duration: const Duration(milliseconds: 900),
     )..repeat(reverse: true);
   }
 
@@ -36,110 +37,96 @@ class _EmergencyCallingScreenState extends State<EmergencyCallingScreen>
 
   @override
   Widget build(BuildContext context) {
-    final Color accent = Colors.greenAccent;
-
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Pulsing animation
-              ScaleTransition(
-                scale: Tween<double>(begin: 0.85, end: 1.10).animate(
-                  CurvedAnimation(
-                    parent: _pulseCtrl,
-                    curve: Curves.easeInOut,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [AppColors.brandBlue, AppColors.brandBlueDark],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ScaleTransition(
+                  scale: Tween<double>(begin: 0.9, end: 1.08).animate(
+                    CurvedAnimation(
+                      parent: _pulseCtrl,
+                      curve: Curves.easeInOut,
+                    ),
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withOpacity(0.16),
+                    ),
+                    child: const Icon(
+                      Icons.phone_in_talk,
+                      color: Colors.white,
+                      size: 86,
+                    ),
                   ),
                 ),
-                child: Container(
-                  padding: const EdgeInsets.all(32),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: accent.withOpacity(0.15),
-                  ),
-                  child: Icon(
-                    Icons.phone_in_talk,
-                    color: accent,
-                    size: 90,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 32),
-
-              // Calling text
-              const Text(
-                "Calling...",
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 20,
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              // Provider name
-              Text(
-                widget.providerName,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              // Phone number
-              Text(
-                widget.phone,
-                style: const TextStyle(
-                  fontSize: 18,
-                  color: Colors.white60,
-                ),
-              ),
-
-              const SizedBox(height: 40),
-
-              // Cancel call button
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 36, vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.call_end),
-                label: const Text(
-                  "Cancel Call",
-                  style: TextStyle(fontSize: 16),
-                ),
-              ),
-
-              const SizedBox(height: 18),
-
-              // Try next provider
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context); // Close calling
-                  Navigator.pop(context); // Back to results
-                },
-                child: const Text(
-                  "Try next provider",
+                const SizedBox(height: 28),
+                const Text(
+                  'Calling...',
                   style: TextStyle(
-                    color: Colors.amber,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
+                    color: Colors.white70,
+                    fontSize: 18,
                   ),
                 ),
-              )
-            ],
+                const SizedBox(height: 8),
+                Text(
+                  widget.providerName,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  widget.phone,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.white70,
+                  ),
+                ),
+                const SizedBox(height: 36),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.brandRed,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 32, vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.call_end),
+                  label: const Text('Cancel Call'),
+                ),
+                const SizedBox(height: 14),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pop(context);
+                  },
+                  child: const Text(
+                    'Try next provider',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                )
+              ],
+            ),
           ),
         ),
       ),

@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
-
+import '../../config/theme.dart';
 import '../../models/contact_model.dart';
 
 class ContactCard extends StatelessWidget {
@@ -45,21 +45,21 @@ class ContactCard extends StatelessWidget {
     Color color;
     switch (contact.category.toLowerCase()) {
       case 'police':
-        color = Colors.blue;
+        color = AppColors.brandBlue;
         break;
       case 'fire':
       case 'fire service':
-        color = Colors.red;
+        color = AppColors.brandRed;
         break;
       case 'health':
       case 'hospital':
-        color = Colors.green;
+        color = AppColors.brandGreen;
         break;
       case 'frsc':
-        color = Colors.orange;
+        color = AppColors.brandOrange;
         break;
       default:
-        color = Colors.grey;
+        color = AppColors.muted;
     }
 
     return Card(

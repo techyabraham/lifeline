@@ -35,57 +35,55 @@ class _EmergencySelectionState extends State<EmergencySelection>
     super.dispose();
   }
 
-  /// -------------------------------------------
-  /// Fetch emergency categories from WP taxonomy
-  /// -------------------------------------------
+  /// --------------------------------------------------
+  /// FETCH SERVICE CATEGORIES (taxonomy: service_category)
+  /// --------------------------------------------------
   Future<void> _loadCategories() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
     try {
-      final response = await _api.fetchServiceCategories();
+      // Direct REST call (taxonomy endpoint)
+      final cats = await _api.fetchServiceCategories();
 
-      _categories = response.map<Map<String, dynamic>>((c) {
-        return {
-          'id': c['id'],
-          'name': c['name'],
-          'slug': c['slug'],
-        };
-      }).toList();
-
-      // Add "My Contacts" as a virtual category
-      _categories.insert(0, {
-        'id': -1,
-        'name': 'My Contacts',
-        'slug': 'my-contacts',
-      });
+      _categories = cats
+          .map<Map<String, dynamic>>((c) => {
+                'id': c['id'],
+                'name': c['name'],
+                'slug': c['slug'],
+              })
+          .toList();
 
       setState(() => _loading = false);
       _ctrl.forward();
     } catch (e) {
       setState(() {
-        _error = 'Unable to load emergency services';
+        _error = 'Unable to load emergency categories';
         _loading = false;
       });
     }
   }
 
-  void _openCategory(Map<String, dynamic> cat, Map<String, dynamic> loc) {
-    // Special handling for My Contacts
-    if (cat['id'] == -1) {
-      Navigator.pushNamed(context, '/search');
-      return;
-    }
-
+  void _openCategory(
+    Map<String, dynamic> category,
+    Map<String, dynamic> locationArgs,
+  ) {
     Navigator.pushNamed(
       context,
       '/emergency/results',
       arguments: {
-        'categoryId': cat['id'],
-        'categoryName': cat['name'],
-        'lgaId': loc['lgaId'],
-        'lgaName': loc['lgaName'],
-        'stateId': loc['stateId'],
-        'stateName': loc['stateName'],
-        'latitude': loc['latitude'],
-        'longitude': loc['longitude'],
+        'categoryId': category['id'],
+        'categoryName': category['name'],
+
+        // Location
+        'lgaId': locationArgs['lgaId'],
+        'lgaName': locationArgs['lgaName'],
+        'stateId': locationArgs['stateId'],
+        'stateName': locationArgs['stateName'],
+        'latitude': locationArgs['latitude'],
+        'longitude': locationArgs['longitude'],
       },
     );
   }
@@ -97,30 +95,38 @@ class _EmergencySelectionState extends State<EmergencySelection>
         rawArgs is Map<String, dynamic> ? rawArgs : {};
 
     return Scaffold(
-      appBar: AppBar(title: const Text("What do you need?")),
+      appBar: AppBar(
+        title: const Text('What do you need?'),
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Column(
             children: [
+              // LOCATION CARD
               if ((locationArgs['lgaName'] ?? '').toString().isNotEmpty)
                 Card(
                   child: ListTile(
                     leading: const Icon(Icons.place),
                     title: Text(
-                      "Location: ${locationArgs['lgaName'] ?? locationArgs['stateName']}",
+                      'Location: ${locationArgs['lgaName'] ?? locationArgs['stateName']}',
                     ),
                     trailing: TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: const Text("Change"),
+                      child: const Text('Change'),
                     ),
                   ),
                 ),
+
               const SizedBox(height: 12),
+
+              // LOADING
               if (_loading)
                 const Expanded(
                   child: Center(child: CircularProgressIndicator()),
                 )
+
+              // ERROR
               else if (_error != null)
                 Expanded(
                   child: Center(
@@ -132,12 +138,14 @@ class _EmergencySelectionState extends State<EmergencySelection>
                         const SizedBox(height: 12),
                         ElevatedButton(
                           onPressed: _loadCategories,
-                          child: const Text("Retry"),
-                        )
+                          child: const Text('Retry'),
+                        ),
                       ],
                     ),
                   ),
                 )
+
+              // GRID
               else
                 Expanded(
                   child: GridView.builder(
@@ -146,8 +154,8 @@ class _EmergencySelectionState extends State<EmergencySelection>
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      mainAxisSpacing: 14,
                       crossAxisSpacing: 14,
+                      mainAxisSpacing: 14,
                       childAspectRatio: 1.05,
                     ),
                     itemBuilder: (context, i) {
@@ -201,8 +209,9 @@ class _EmergencySelectionState extends State<EmergencySelection>
 
   IconData _pickIcon(String name) {
     final n = name.toLowerCase();
-    if (n.contains('my')) return Icons.contacts;
-    if (n.contains('hospital')) return Icons.local_hospital;
+    if (n.contains('hospital') || n.contains('health')) {
+      return Icons.local_hospital;
+    }
     if (n.contains('police')) return Icons.local_police;
     if (n.contains('fire')) return Icons.local_fire_department;
     if (n.contains('road') || n.contains('frsc')) return Icons.traffic;
