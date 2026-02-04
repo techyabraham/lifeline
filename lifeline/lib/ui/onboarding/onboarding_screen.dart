@@ -112,132 +112,93 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     final safeBottom = (bottomInset < 12) ? 16.0 : bottomInset + 8.0;
 
     return Scaffold(
-      body: Stack(
-        children: [
-          PageView.builder(
-            controller: _pageController,
-            itemCount: slides.length,
-            itemBuilder: (context, idx) {
-              final s = slides[idx];
-              return SafeArea(
-                top: true,
-                bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 22),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const SizedBox(height: 18),
-                      Image.asset(
-                        'assets/images/logo.png',
-                        width: 42,
-                        height: 42,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'LifeLine',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 24),
-                      Card(
-                        elevation: 1.2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: _skip,
+                child:
+                    const Text('Skip', style: TextStyle(color: AppColors.muted)),
+              ),
+            ),
+            Expanded(
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: slides.length,
+                itemBuilder: (context, idx) {
+                  final s = slides[idx];
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 120,
+                          height: 120,
+                          decoration: BoxDecoration(
+                            color: s.color.withOpacity(0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(s.icon, size: 60, color: s.color),
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(22),
-                          child: Column(
-                            children: [
-                              Container(
-                                width: 120,
-                                height: 120,
-                                decoration: BoxDecoration(
-                                  color: s.color.withOpacity(0.12),
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                                child: Icon(
-                                  s.icon,
-                                  size: 60,
-                                  color: s.color,
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              Text(
-                                s.title,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                s.subtitle,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: AppColors.muted,
-                                ),
-                              ),
-                            ],
+                        const SizedBox(height: 24),
+                        Text(
+                          s.title,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
-                      ),
-                      const Spacer(),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children:
-                            List.generate(slides.length, _buildIndicator),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-          Positioned(
-            right: 18,
-            top: MediaQuery.of(context).viewPadding.top + 8,
-            child: TextButton(
-              onPressed: _skip,
-              child:
-                  const Text('Skip', style: TextStyle(color: AppColors.muted)),
-            ),
-          ),
-          Positioned(
-            left: 18,
-            right: 18,
-            bottom: safeBottom,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ScaleTransition(
-                  scale: _pulseController,
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _next,
-                      child: Text(
-                        _page == slides.length - 1 ? 'Get Started' : 'Next',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
+                        const SizedBox(height: 10),
+                        Text(
+                          s.subtitle,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.muted,
+                          ),
                         ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(slides.length, _buildIndicator),
+            ),
+            const SizedBox(height: 16),
+            Padding(
+              padding: EdgeInsets.only(left: 18, right: 18, bottom: safeBottom),
+              child: ScaleTransition(
+                scale: _pulseController,
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _next,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.brandBlue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                    child: Text(
+                      _page == slides.length - 1 ? 'Get Started' : 'Next',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 10),
-                TextButton(
-                  onPressed: () => Navigator.pushNamed(context, '/profile'),
-                  child: const Text('Learn more',
-                      style: TextStyle(color: AppColors.muted)),
-                ),
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

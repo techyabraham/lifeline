@@ -1,6 +1,6 @@
 // lib/ui/calling/calling_screen.dart
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../../services/call_service.dart';
 
 class CallingScreen extends StatefulWidget {
   final String providerName;
@@ -30,26 +30,15 @@ class _CallingScreenState extends State<CallingScreen>
     )..repeat(reverse: true);
 
     // Launch call shortly after screen shows
-    WidgetsBinding.instance.addPostFrameCallback((_) => _launchDialer());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      CallService.call(context, widget.phone);
+    });
   }
 
   @override
   void dispose() {
     _pulseController.dispose();
     super.dispose();
-  }
-
-  Future<void> _launchDialer() async {
-    final uri = Uri(scheme: 'tel', path: widget.phone);
-
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to place call')),
-      );
-    }
   }
 
   @override

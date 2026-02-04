@@ -1,6 +1,7 @@
 // lib/ui/emergency_flow/screens/calling_screen.dart
 import 'package:flutter/material.dart';
 import '../../../config/theme.dart';
+import '../../../services/call_service.dart';
 
 class EmergencyCallingScreen extends StatefulWidget {
   final String providerName;
@@ -27,6 +28,10 @@ class _EmergencyCallingScreenState extends State<EmergencyCallingScreen>
       vsync: this,
       duration: const Duration(milliseconds: 900),
     )..repeat(reverse: true);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      CallService.call(context, widget.phone);
+    });
   }
 
   @override

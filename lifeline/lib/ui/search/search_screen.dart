@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../../config/theme.dart';
 import '../../services/api_service.dart';
+import '../../services/geo_data_service.dart';
 import '../../repositories/contacts_repository.dart';
 import '../../models/emergency_contact.dart';
 import '../../models/contact_model.dart';
@@ -16,13 +17,14 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final ApiService _api = ApiService();
+  final GeoDataService _geo = GeoDataService.instance;
   late final ContactsRepository _repo;
 
   int? selectedStateId;
   int? selectedLgaId;
 
-  List<Map<String, dynamic>> states = [];
-  List<Map<String, dynamic>> lgas = [];
+  List<GeoState> states = [];
+  List<GeoLga> lgas = [];
 
   List<ContactModel> contacts = [];
   bool loading = false;
@@ -45,8 +47,9 @@ class _SearchScreenState extends State<SearchScreen> {
         error = null;
       });
 
-      final fetchedStates = await _api.fetchStates();
-      final fetchedLgas = await _api.fetchLgas();
+      await _geo.init();
+      final fetchedStates = _geo.states;
+      final fetchedLgas = _geo.states.expand((s) => s.lgas).toList();
 
       setState(() {
         states = fetchedStates;
@@ -62,13 +65,12 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   // ------------------------------------------------------------
-  // FILTER LGAs BY STATE (if parent relationship exists)
+  // FILTER LGAs BY STATE
   // ------------------------------------------------------------
-  List<Map<String, dynamic>> get _filteredLgas {
+  List<GeoLga> get _filteredLgas {
     if (selectedStateId == null) return lgas;
 
-    final filtered =
-        lgas.where((lga) => lga['parent'] == selectedStateId).toList();
+    final filtered = lgas.where((lga) => lga.stateId == selectedStateId).toList();
 
     return filtered.isNotEmpty ? filtered : lgas;
   }
@@ -89,17 +91,33 @@ class _SearchScreenState extends State<SearchScreen> {
       final List<EmergencyContact> result = await _repo.getContacts(
           stateId: selectedStateId, lgaId: selectedLgaId);
 
-      // Convert EmergencyContact → ContactModel for UI
+      // Convert EmergencyContact -> ContactModel for UI
       final mapped = result.map((c) {
-        final stateName = states.firstWhere(
-          (s) => s['id'] == c.state,
-          orElse: () => {},
-        )['name'];
+        final stateName = states
+            .firstWhere(
+              (s) => s.id == c.state,
+              orElse: () => const GeoState(
+                id: -1,
+                name: '',
+                displayName: '',
+                slug: '',
+                lgas: [],
+              ),
+            )
+            .displayName;
 
-        final lgaName = lgas.firstWhere(
-          (l) => l['id'] == c.lga,
-          orElse: () => {},
-        )['name'];
+        final lgaName = lgas
+            .firstWhere(
+              (l) => l.id == c.lga,
+              orElse: () => const GeoLga(
+                id: -1,
+                name: '',
+                slug: '',
+                stateId: -1,
+                stateSlug: '',
+              ),
+            )
+            .name;
 
         return ContactModel.fromEmergency(
           c,
@@ -147,8 +165,8 @@ class _SearchScreenState extends State<SearchScreen> {
                       items: states
                           .map(
                             (s) => DropdownMenuItem<int>(
-                              value: s['id'],
-                              child: Text(s['name']),
+                              value: s.id,
+                              child: Text(s.displayName),
                             ),
                           )
                           .toList(),
@@ -167,8 +185,8 @@ class _SearchScreenState extends State<SearchScreen> {
                       items: _filteredLgas
                           .map(
                             (l) => DropdownMenuItem<int>(
-                              value: l['id'],
-                              child: Text(l['name']),
+                              value: l.id,
+                              child: Text(l.name),
                             ),
                           )
                           .toList(),

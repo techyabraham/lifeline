@@ -44,6 +44,8 @@ dependencies:
 
   # URL Launching
   url_launcher: ^6.3.1
+  flutter_phone_direct_caller: ^2.1.1
+  permission_handler: ^12.0.0
 
   # Localization & Fonts
   flutter_localizations:
@@ -76,6 +78,7 @@ flutter:
 
   assets:
     - assets/images/logo.png
+    - assets/data/nigeria_states_lgas.json
     #- assets/images/app_icon.png
     #- assets/icons/fast.png
     #- assets/icons/verified.png

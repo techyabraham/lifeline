@@ -4,6 +4,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../config/theme.dart';
 import '../../models/contact_model.dart';
+import '../../services/call_service.dart';
 
 class ContactCard extends StatelessWidget {
   final ContactModel contact;
@@ -26,15 +27,7 @@ class ContactCard extends StatelessWidget {
   }
 
   Future<void> _callNow(BuildContext context) async {
-    final uri = Uri(scheme: 'tel', path: contact.phone);
-
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to place call')),
-      );
-    }
+    await CallService.call(context, contact.phone);
   }
 
   // ------------------------------------------------------------

@@ -1,14 +1,12 @@
 // lib/ui/location/location_screen.dart
-// Updated to use real ApiService (Headless WP), reverse-geocode, and live State/LGA lists.
-// Expects an ApiService with methods: fetchStates() -> List<Map>, fetchLgas() -> List<Map>
-// and that each state/lga item has keys: id, name, slug.
+// Updated to use local GeoDataService dataset (offline) for State/LGA.
 // Navigates to /emergency with:
 // { "lgaId", "lgaName", "stateId", "stateName", "latitude", "longitude" }
 
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart' as geo;
-import '../../services/api_service.dart';
+import '../../services/geo_data_service.dart';
 
 class LocationScreen extends StatefulWidget {
   const LocationScreen({super.key});
@@ -17,9 +15,9 @@ class LocationScreen extends StatefulWidget {
 }
 
 class _LocationScreenState extends State<LocationScreen> {
-  final ApiService _api = ApiService();
+  final GeoDataService _geo = GeoDataService.instance;
 
-  String status = 'Detecting location…';
+  String status = 'Detecting location...';
   bool locating = true;
   bool loadingLookups = true;
   String? detectedLgaName;
@@ -27,10 +25,9 @@ class _LocationScreenState extends State<LocationScreen> {
   double? detectedLat;
   double? detectedLng;
 
-  List<Map<String, dynamic>> states = [];
-  List<Map<String, dynamic>> lgas = [];
+  List<GeoState> states = [];
+  List<GeoLga> lgas = [];
 
-  // Manual selection values (store id when possible)
   int? selectedStateId;
   int? selectedLgaId;
   String? selectedStateName;
@@ -48,28 +45,10 @@ class _LocationScreenState extends State<LocationScreen> {
     });
 
     try {
-      // Fetch states & lgas (live from WP)
-      final fetchedStates = await _api.fetchStates();
-      final fetchedLgas = await _api.fetchLgas();
-
-      // Normalize to map list with id/name for easy use in dropdowns
-      states = List<Map<String, dynamic>>.from(fetchedStates.map((m) {
-        return {
-          'id': m['id'],
-          'name': (m['name'] ?? '').toString(),
-          'slug': m['slug'] ?? '',
-        };
-      }));
-
-      lgas = List<Map<String, dynamic>>.from(fetchedLgas.map((m) {
-        return {
-          'id': m['id'],
-          'name': (m['name'] ?? '').toString(),
-          'slug': m['slug'] ?? '',
-        };
-      }));
+      await _geo.init();
+      states = _geo.states;
+      lgas = _geo.states.expand((s) => s.lgas).toList();
     } catch (e) {
-      // If lookup fetch fails, still allow manual text entry later
       debugPrint('Failed to load lookups: $e');
       states = [];
       lgas = [];
@@ -78,7 +57,6 @@ class _LocationScreenState extends State<LocationScreen> {
         loadingLookups = false;
       });
 
-      // Try auto-locate after lookups load
       await _tryAutoLocate();
     }
   }
@@ -86,7 +64,7 @@ class _LocationScreenState extends State<LocationScreen> {
   Future<void> _tryAutoLocate() async {
     setState(() {
       locating = true;
-      status = 'Detecting location…';
+      status = 'Detecting location...';
       detectedLgaName = null;
       detectedStateName = null;
       detectedLat = null;
@@ -132,7 +110,6 @@ class _LocationScreenState extends State<LocationScreen> {
       detectedLat = pos.latitude;
       detectedLng = pos.longitude;
 
-      // Reverse geocode using platform geocoder to get locality/state info
       String? bestLga;
       String? bestState;
       try {
@@ -140,86 +117,58 @@ class _LocationScreenState extends State<LocationScreen> {
             await geo.placemarkFromCoordinates(detectedLat!, detectedLng!);
         if (placemarks.isNotEmpty) {
           final p = placemarks.first;
-          // Common fields: subAdministrativeArea (LGA), administrativeArea (state), locality (city)
           bestLga = p.subAdministrativeArea?.trim();
           bestState = p.administrativeArea?.trim();
 
-          // Sometimes locality contains LGA; try fallback
           if ((bestLga == null || bestLga.isEmpty) &&
               (p.locality?.isNotEmpty ?? false)) {
             bestLga = p.locality;
           }
 
-          // Normalize
-          if (bestLga != null && bestLga.isEmpty) bestLga = null;
-          if (bestState != null && bestState.isEmpty) bestState = null;
+          if (bestLga != null && bestLga!.isEmpty) bestLga = null;
+          if (bestState != null && bestState!.isEmpty) bestState = null;
         }
       } catch (e) {
         debugPrint('Reverse geocoding failed: $e');
       }
 
-      // Best-effort match with WP LGA list: case-insensitive substring match
-      int? matchedLgaId;
-      int? matchedStateId;
-      String? matchedLgaName;
-      String? matchedStateName;
-
-      if (bestLga != null) {
-        final lower = bestLga.toLowerCase();
-        for (var l in lgas) {
-          final name = (l['name'] ?? '').toString().toLowerCase();
-          if (name.contains(lower) || lower.contains(name)) {
-            matchedLgaId = l['id'] as int?;
-            matchedLgaName = l['name'] as String?;
-            break;
-          }
-        }
-      }
+      GeoState? matchedState;
+      GeoLga? matchedLga;
 
       if (bestState != null) {
-        final lower = bestState.toLowerCase();
-        for (var s in states) {
-          final name = (s['name'] ?? '').toString().toLowerCase();
-          if (name.contains(lower) || lower.contains(name)) {
-            matchedStateId = s['id'] as int?;
-            matchedStateName = s['name'] as String?;
-            break;
-          }
-        }
+        matchedState = _geo.matchStateByName(bestState!);
       }
 
-      // If no matched LGA but we have state matched, try to find likely LGA by comparing locality
-      if (matchedLgaId == null && bestLga != null && states.isNotEmpty) {
-        // Try a looser match: find first LGA that contains first word of bestLga
-        final tokens = bestLga
-            .split(RegExp(r'[\s,-/]'))
-            .where((t) => t.isNotEmpty)
-            .toList();
-        if (tokens.isNotEmpty) {
-          final token = tokens.first.toLowerCase();
-          for (var l in lgas) {
-            final name = (l['name'] ?? '').toString().toLowerCase();
-            if (name.contains(token) || token.contains(name)) {
-              matchedLgaId = l['id'] as int?;
-              matchedLgaName = l['name'] as String?;
-              break;
-            }
-          }
-        }
+      if (bestLga != null) {
+        matchedLga = _geo.matchLgaByName(matchedState?.id, bestLga!);
+        matchedLga ??= _geo.matchLgaByName(null, bestLga!);
+      }
+
+      if (matchedState == null && matchedLga != null) {
+        matchedState = states.firstWhere(
+          (s) => s.id == matchedLga!.stateId,
+          orElse: () => const GeoState(
+            id: -1,
+            name: '',
+            displayName: '',
+            slug: '',
+            lgas: [],
+          ),
+        );
+        if (matchedState.id == -1) matchedState = null;
       }
 
       setState(() {
-        detectedLgaName = matchedLgaName ?? bestLga;
-        detectedStateName = matchedStateName ?? bestState;
+        detectedLgaName = matchedLga?.name ?? bestLga;
+        detectedStateName = matchedState?.displayName ?? bestState;
         locating = false;
-        status = (matchedLgaName != null || matchedStateName != null)
+        status = (matchedLga != null || matchedState != null)
             ? 'Located: ${detectedLgaName ?? ''}${detectedStateName != null ? ', $detectedStateName' : ''}'
             : 'Located coordinates, but could not map to LGA. Please select manually.';
-        // Save matched ids to selected fields — user can edit before continue
-        selectedLgaId = matchedLgaId;
-        selectedLgaName = matchedLgaName;
-        selectedStateId = matchedStateId;
-        selectedStateName = matchedStateName;
+        selectedLgaId = matchedLga?.id;
+        selectedLgaName = matchedLga?.name;
+        selectedStateId = matchedState?.id;
+        selectedStateName = matchedState?.displayName;
       });
     } catch (e) {
       debugPrint('Auto-locate error: $e');
@@ -237,7 +186,6 @@ class _LocationScreenState extends State<LocationScreen> {
       return;
     }
 
-    // If we have matched ids prefer them; otherwise pass names
     Navigator.pushNamed(context, '/emergency', arguments: {
       'lgaId': selectedLgaId,
       'lgaName': selectedLgaName ?? detectedLgaName,
@@ -249,10 +197,7 @@ class _LocationScreenState extends State<LocationScreen> {
   }
 
   void _continueWithManual() {
-    if ((selectedStateId == null &&
-            (selectedStateName == null || selectedStateName!.isEmpty)) ||
-        (selectedLgaId == null &&
-            (selectedLgaName == null || selectedLgaName!.isEmpty))) {
+    if (selectedStateId == null || selectedLgaId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please select a State and LGA')));
       return;
@@ -273,6 +218,10 @@ class _LocationScreenState extends State<LocationScreen> {
     final accent = const Color(0xFFFF3B30);
     final bottomSafe = MediaQuery.of(context).viewPadding.bottom;
     final safeBottom = (bottomSafe < 12) ? 16.0 : bottomSafe + 8.0;
+
+    final stateLgas = selectedStateId == null
+        ? lgas
+        : _geo.lgasForState(selectedStateId!);
 
     return Scaffold(
       appBar: AppBar(
@@ -327,7 +276,6 @@ class _LocationScreenState extends State<LocationScreen> {
             const Text('OR', style: TextStyle(color: Colors.black54)),
             const SizedBox(height: 14),
 
-            // Manual selection using live dropdowns if available
             Card(
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
@@ -349,66 +297,50 @@ class _LocationScreenState extends State<LocationScreen> {
                       )
                     : Column(
                         children: [
-                          // State dropdown (if states available) or fallback TextField
-                          states.isNotEmpty
-                              ? DropdownButtonFormField<int>(
-                                  value: selectedStateId,
-                                  decoration:
-                                      const InputDecoration(labelText: 'State'),
-                                  items: states
-                                      .map((s) => DropdownMenuItem<int>(
-                                            value: s['id'] as int,
-                                            child: Text(s['name'] ?? ''),
-                                          ))
-                                      .toList(),
-                                  onChanged: (val) {
-                                    setState(() {
-                                      selectedStateId = val;
-                                      selectedStateName = (states.firstWhere(
-                                                  (e) =>
-                                                      e['id'] == val)['name'] ??
-                                              '')
-                                          .toString();
-                                      // Optionally filter LGAs list to those belonging to this state if your WP provides parent relationships
-                                    });
-                                  },
-                                )
-                              : TextFormField(
-                                  initialValue: selectedStateName,
-                                  decoration: const InputDecoration(
-                                      labelText: 'State (type)'),
-                                  onChanged: (v) =>
-                                      selectedStateName = v.trim(),
-                                ),
+                          DropdownButtonFormField<int>(
+                            value: selectedStateId,
+                            decoration: const InputDecoration(labelText: 'State'),
+                            items: states
+                                .map((s) => DropdownMenuItem<int>(
+                                      value: s.id,
+                                      child: Text(s.displayName),
+                                    ))
+                                .toList(),
+                            onChanged: (val) {
+                              final state =
+                                  states.where((s) => s.id == val).toList();
+                              final selected = state.isNotEmpty ? state.first : null;
+                              setState(() {
+                                selectedStateId = val;
+                                selectedStateName = selected?.displayName;
+                                final lgaList =
+                                    val == null ? <GeoLga>[] : _geo.lgasForState(val);
+                                final firstLga = lgaList.isNotEmpty ? lgaList.first : null;
+                                selectedLgaId = firstLga?.id;
+                                selectedLgaName = firstLga?.name;
+                              });
+                            },
+                          ),
                           const SizedBox(height: 8),
-                          // LGA dropdown or fallback
-                          lgas.isNotEmpty
-                              ? DropdownButtonFormField<int>(
-                                  value: selectedLgaId,
-                                  decoration:
-                                      const InputDecoration(labelText: 'LGA'),
-                                  items: lgas
-                                      .map((l) => DropdownMenuItem<int>(
-                                            value: l['id'] as int,
-                                            child: Text(l['name'] ?? ''),
-                                          ))
-                                      .toList(),
-                                  onChanged: (val) {
-                                    setState(() {
-                                      selectedLgaId = val;
-                                      selectedLgaName = (lgas.firstWhere((e) =>
-                                                  e['id'] == val)['name'] ??
-                                              '')
-                                          .toString();
-                                    });
-                                  },
-                                )
-                              : TextFormField(
-                                  initialValue: selectedLgaName,
-                                  decoration: const InputDecoration(
-                                      labelText: 'LGA (type)'),
-                                  onChanged: (v) => selectedLgaName = v.trim(),
-                                ),
+                          DropdownButtonFormField<int>(
+                            value: selectedLgaId,
+                            decoration: const InputDecoration(labelText: 'LGA'),
+                            items: stateLgas
+                                .map((l) => DropdownMenuItem<int>(
+                                      value: l.id,
+                                      child: Text(l.name),
+                                    ))
+                                .toList(),
+                            onChanged: (val) {
+                              final selected =
+                                  stateLgas.where((e) => e.id == val).toList();
+                              setState(() {
+                                selectedLgaId = val;
+                                selectedLgaName =
+                                    selected.isNotEmpty ? selected.first.name : null;
+                              });
+                            },
+                          ),
                           const SizedBox(height: 12),
                           Row(
                             children: [
@@ -438,7 +370,6 @@ class _LocationScreenState extends State<LocationScreen> {
             const Text('Location will be used to show nearest facilities.'),
             const Spacer(),
 
-            // Small helper: show coordinates if available
             if (detectedLat != null && detectedLng != null)
               Text(
                   'Detected coords: ${detectedLat!.toStringAsFixed(5)}, ${detectedLng!.toStringAsFixed(5)}',

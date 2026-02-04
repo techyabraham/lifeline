@@ -1,174 +1,291 @@
 // lib/ui/home/home_screen.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../config/theme.dart';
-import '../widgets/common_widgets.dart';
+import '../emergency_flow/flow_controller.dart';
+import '../emergency_flow/models/emergency_type.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final bottomPad = MediaQuery.of(context).viewPadding.bottom;
-    final safeBottom = (bottomPad < 12) ? 16.0 : bottomPad + 8.0;
+    final ctrl = Provider.of<EmergencyFlowController>(context);
+    final locationLabel = (ctrl.selectedLga ?? 'Ikeja') +
+        ', ' +
+        (ctrl.selectedState ?? 'Lagos');
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('LifeLine'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () => Navigator.pushNamed(context, '/search'),
-            tooltip: 'Search contacts',
-          ),
-          IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () => Navigator.pushNamed(context, '/profile'),
-            tooltip: 'Profile',
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+    return Stack(
+      children: [
+        SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 10),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 52,
-                        height: 52,
-                        decoration: BoxDecoration(
-                          color: AppColors.brandBlue.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: const Icon(Icons.my_location,
-                            color: AppColors.brandBlue),
-                      ),
-                      const SizedBox(width: 14),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Auto Location Detection',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              'Detecting your location...',
-                              style: TextStyle(color: AppColors.muted),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.pushNamed(
-                          context,
-                          '/emergency/location',
-                        ),
-                        icon: const Icon(Icons.chevron_right),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
               const SizedBox(height: 6),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 52,
-                        height: 52,
-                        decoration: BoxDecoration(
-                          color: AppColors.brandGreen.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: const Icon(Icons.map_outlined,
-                            color: AppColors.brandGreen),
-                      ),
-                      const SizedBox(width: 14),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Select Your Area',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              'Choose State & Local Govt',
-                              style: TextStyle(color: AppColors.muted),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.pushNamed(
-                          context,
-                          '/emergency/location',
-                        ),
-                        icon: const Icon(Icons.chevron_right),
-                      ),
-                    ],
-                  ),
-                ),
+              const Text(
+                'Welcome back',
+                style: TextStyle(color: AppColors.muted, fontSize: 12),
               ),
-              const SizedBox(height: 12),
-              LargeButton(
-                label: 'Get Started',
-                icon: Icons.arrow_forward,
-                onTap: () =>
-                    Navigator.pushNamed(context, '/emergency/location'),
+              const SizedBox(height: 4),
+              const Text(
+                'Stay Safe',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
               ),
-              const SizedBox(height: 14),
-              Card(
-                child: ListTile(
-                  onTap: () => Navigator.pushNamed(context, '/contacts'),
-                  leading: const CircleAvatar(
-                    backgroundColor: AppColors.brandBlue,
-                    child: Icon(Icons.group, color: Colors.white),
-                  ),
-                  title: const Text('My Emergency Contacts'),
-                  subtitle: const Text('3 contacts saved'),
-                  trailing: const Icon(Icons.chevron_right),
-                ),
-              ),
-              const Spacer(),
-              Padding(
-                padding: EdgeInsets.only(bottom: safeBottom),
+              const SizedBox(height: 16),
+              InkWell(
+                onTap: () => Navigator.pushNamed(context, '/emergency/location'),
+                borderRadius: BorderRadius.circular(16),
                 child: Container(
-                  height: 60,
-                  width: double.infinity,
-                  alignment: Alignment.center,
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      )
+                    ],
                   ),
-                  child: const Text('Ad goes here'),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.brandBlue.withOpacity(0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.location_on,
+                            color: AppColors.brandBlue),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Current Location',
+                                style: TextStyle(
+                                    fontSize: 12, color: AppColors.muted)),
+                            Text(locationLabel,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right, color: AppColors.muted),
+                    ],
+                  ),
                 ),
+              ),
+              const SizedBox(height: 22),
+              const Text('Emergency Services',
+                  style: TextStyle(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 10),
+              GridView.count(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                children: _services.map((s) {
+                  return _ServiceCard(
+                    title: s.title,
+                    description: s.description,
+                    color: s.color,
+                    icon: s.icon,
+                    onTap: () {
+                      ctrl.pickType(s.type);
+                      Navigator.pushNamed(context, '/emergency/results');
+                    },
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 22),
+              const Text('Nearest Help Centers',
+                  style: TextStyle(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 10),
+              ..._recentCenters.map((c) => Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        )
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(c['name']!,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w600)),
+                              const SizedBox(height: 2),
+                              Text(c['number']!,
+                                  style: const TextStyle(
+                                      fontSize: 12, color: AppColors.muted)),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right, color: AppColors.muted),
+                      ],
+                    ),
+                  )),
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.brandBlue, AppColors.brandBlueDark],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    CircleAvatar(
+                      backgroundColor: Colors.white24,
+                      child: Icon(Icons.info, color: Colors.white),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Safety Tip\nSave emergency numbers offline for quick access. Share your location with trusted contacts.',
+                        style: TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 80),
+            ],
+          ),
+        ),
+        Positioned(
+          bottom: 16,
+          right: 16,
+          child: FloatingActionButton(
+            onPressed: () => Navigator.pushNamed(context, '/emergency/location'),
+            backgroundColor: AppColors.brandRed,
+            child: const Icon(Icons.warning_amber_rounded),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ServiceItem {
+  final String title;
+  final String description;
+  final IconData icon;
+  final Color color;
+  final EmergencyType type;
+  const _ServiceItem({
+    required this.title,
+    required this.description,
+    required this.icon,
+    required this.color,
+    required this.type,
+  });
+}
+
+final List<_ServiceItem> _services = [
+  _ServiceItem(
+    title: 'Police',
+    description: 'Report crimes & emergencies',
+    icon: Icons.shield,
+    color: AppColors.brandBlue,
+    type: defaultEmergencyTypes.firstWhere((t) => t.id == 'police'),
+  ),
+  _ServiceItem(
+    title: 'Fire Service',
+    description: 'Fire & rescue emergencies',
+    icon: Icons.local_fire_department,
+    color: AppColors.brandRed,
+    type: defaultEmergencyTypes.firstWhere((t) => t.id == 'fire'),
+  ),
+  _ServiceItem(
+    title: 'Hospital',
+    description: 'Medical emergencies',
+    icon: Icons.favorite,
+    color: AppColors.brandGreen,
+    type: defaultEmergencyTypes.firstWhere((t) => t.id == 'medical'),
+  ),
+  _ServiceItem(
+    title: 'FRSC',
+    description: 'Road accidents & safety',
+    icon: Icons.directions_car,
+    color: AppColors.brandOrange,
+    type: defaultEmergencyTypes.firstWhere((t) => t.id == 'road'),
+  ),
+];
+
+final List<Map<String, String>> _recentCenters = [
+  {'name': 'Lagos State Police Command', 'number': '112'},
+  {'name': 'Lagos Fire Service', 'number': '112'},
+  {'name': 'General Hospital Ikeja', 'number': '+234 803 XXX XXXX'},
+];
+
+class _ServiceCard extends StatelessWidget {
+  final String title;
+  final String description;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ServiceCard({
+    required this.title,
+    required this.description,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: Colors.white, size: 22),
+              ),
+              const SizedBox(height: 10),
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 4),
+              Text(
+                description,
+                style: const TextStyle(fontSize: 11, color: AppColors.muted),
               ),
             ],
           ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.pushNamed(context, '/emergency/location'),
-        icon: const Icon(Icons.sos),
-        label: const Text('SOS'),
       ),
     );
   }

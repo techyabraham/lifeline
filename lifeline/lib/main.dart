@@ -15,6 +15,10 @@ import 'ui/home/home_screen.dart';
 import 'ui/search/search_screen.dart';
 import 'ui/profile/profile_screen.dart';
 import 'ui/contacts/contacts_screen.dart';
+import 'ui/contacts/add_contacts_screen.dart';
+import 'ui/shell/main_shell.dart';
+import 'ui/settings/settings_screen.dart';
+import 'ui/account/account_screen.dart';
 
 // Emergency flow (Option A)
 import 'ui/emergency_flow/flow_controller.dart';
@@ -23,6 +27,7 @@ import 'ui/emergency_flow/screens/location_screen.dart' as ef_loc;
 import 'ui/emergency_flow/screens/emergency_selection_screen.dart' as ef_sel;
 import 'ui/emergency_flow/screens/results_screen.dart' as ef_res;
 import 'ui/emergency_flow/screens/calling_screen.dart' as ef_call;
+import 'ui/emergency_flow/screens/directions_screen.dart' as ef_dir;
 
 // Bloc / Repositories
 import 'blocs/theme/theme_bloc.dart';
@@ -85,10 +90,13 @@ class LifeLineApp extends StatelessWidget {
             // Core
             '/splash': (_) => const SplashScreen(),
             '/onboarding': (_) => const OnboardingScreen(),
-            '/home': (_) => const HomeScreen(),
+            '/home': (_) => const MainShell(initialIndex: 0),
             '/search': (_) => const SearchScreen(),
             '/profile': (_) => const ProfileScreen(),
-            '/contacts': (_) => const ContactsScreen(),
+            '/contacts': (_) => const MainShell(initialIndex: 1),
+            '/contacts/add': (_) => const AddContactsScreen(),
+            '/settings': (_) => const MainShell(initialIndex: 2),
+            '/account': (_) => const MainShell(initialIndex: 3),
 
             // Emergency Flow (Primary)
             '/emergency/home': (_) => const ef_home.EmergencyHomeScreen(),
@@ -96,6 +104,8 @@ class LifeLineApp extends StatelessWidget {
                 const ef_loc.EmergencyLocationScreen(),
             '/emergency/select': (_) => const ef_sel.EmergencySelectionScreen(),
             '/emergency/results': (_) => const ef_res.EmergencyResultsScreen(),
+            '/emergency/directions': (_) =>
+                const ef_dir.EmergencyDirectionsScreen(),
           },
 
           /// --------------------------------------------------

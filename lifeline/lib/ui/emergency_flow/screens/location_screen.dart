@@ -2,8 +2,10 @@
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart' as geo;
 import 'package:geolocator/geolocator.dart';
+import 'package:provider/provider.dart';
 import '../../../config/theme.dart';
-import '../../../services/api_service.dart';
+import '../../../services/geo_data_service.dart';
+import '../flow_controller.dart';
 
 class EmergencyLocationScreen extends StatefulWidget {
   const EmergencyLocationScreen({super.key});
@@ -14,21 +16,24 @@ class EmergencyLocationScreen extends StatefulWidget {
 }
 
 class _EmergencyLocationScreenState extends State<EmergencyLocationScreen> {
-  final ApiService _api = ApiService();
+  final GeoDataService _geo = GeoDataService.instance;
 
   bool locating = true;
   bool loadingLookups = true;
+  String searchQuery = '';
 
   String status = 'Detecting location...';
 
   double? detectedLat;
   double? detectedLng;
+  Position? detectedPosition;
 
   String? detectedStateName;
   String? detectedLgaName;
+  String? detectedAddress;
 
-  List<Map<String, dynamic>> states = [];
-  List<Map<String, dynamic>> lgas = [];
+  List<GeoState> states = [];
+  List<GeoLga> lgas = [];
 
   int? selectedStateId;
   int? selectedLgaId;
@@ -43,11 +48,9 @@ class _EmergencyLocationScreenState extends State<EmergencyLocationScreen> {
 
   Future<void> _loadLookups() async {
     try {
-      final s = await _api.fetchStates();
-      final g = await _api.fetchLgas();
-
-      states = List<Map<String, dynamic>>.from(s);
-      lgas = List<Map<String, dynamic>>.from(g);
+      await _geo.init();
+      states = _geo.states;
+      lgas = _geo.states.expand((s) => s.lgas).toList();
     } catch (e) {
       debugPrint('Lookup load failed: $e');
       states = [];
@@ -93,6 +96,7 @@ class _EmergencyLocationScreenState extends State<EmergencyLocationScreen> {
         timeLimit: const Duration(seconds: 8),
       );
 
+      detectedPosition = pos;
       detectedLat = pos.latitude;
       detectedLng = pos.longitude;
 
@@ -112,6 +116,7 @@ class _EmergencyLocationScreenState extends State<EmergencyLocationScreen> {
       if (placemarks.isEmpty) throw 'No placemarks';
 
       final p = placemarks.first;
+      detectedAddress = _formatAddress(p);
 
       String? guessLga = p.subAdministrativeArea;
       String? guessState = p.administrativeArea;
@@ -124,7 +129,7 @@ class _EmergencyLocationScreenState extends State<EmergencyLocationScreen> {
       detectedLgaName = guessLga;
       detectedStateName = guessState;
 
-      _matchLocationToTaxonomy();
+      _matchLocationToDataset();
     } catch (e) {
       debugPrint('Reverse geocode failed: $e');
       setState(() {
@@ -134,52 +139,68 @@ class _EmergencyLocationScreenState extends State<EmergencyLocationScreen> {
     }
   }
 
-  void _matchLocationToTaxonomy() {
-    int? foundStateId;
-    int? foundLgaId;
+  void _matchLocationToDataset() {
+    GeoState? matchedState;
+    GeoLga? matchedLga;
 
-    if (detectedStateName != null) {
-      final sLower = detectedStateName!.toLowerCase();
-      for (var s in states) {
-        if ((s['name'] ?? '').toString().toLowerCase().contains(sLower)) {
-          foundStateId = s['id'];
-          break;
-        }
+    if (detectedStateName != null && detectedStateName!.trim().isNotEmpty) {
+      matchedState = _geo.matchStateByName(detectedStateName!);
+    }
+
+    if (detectedLgaName != null && detectedLgaName!.trim().isNotEmpty) {
+      matchedLga = _geo.matchLgaByName(matchedState?.id, detectedLgaName!);
+      if (matchedLga == null) {
+        matchedLga = _geo.matchLgaByName(null, detectedLgaName!);
       }
     }
 
-    if (detectedLgaName != null) {
-      final lLower = detectedLgaName!.toLowerCase();
-      for (var g in lgas) {
-        if ((g['name'] ?? '').toString().toLowerCase().contains(lLower)) {
-          foundLgaId = g['id'];
-          break;
-        }
+    if (matchedState == null && matchedLga != null) {
+      matchedState = states.firstWhere(
+        (s) => s.id == matchedLga!.stateId,
+        orElse: () => const GeoState(
+          id: -1,
+          name: '',
+          displayName: '',
+          slug: '',
+          lgas: [],
+        ),
+      );
+      if (matchedState.id == -1) {
+        matchedState = null;
       }
     }
 
     setState(() {
-      selectingForContinue(foundStateId, foundLgaId);
+      selectingForContinue(matchedState, matchedLga);
       locating = false;
 
-      status = (foundStateId != null || foundLgaId != null)
+      status = (matchedState != null || matchedLga != null)
           ? 'Detected: ${detectedLgaName ?? ''}, ${detectedStateName ?? ''}'
           : 'Detected but unmatched; please correct manually.';
     });
   }
 
-  void selectingForContinue(int? stId, int? lgId) {
-    selectedStateId = stId;
-    selectedLgaId = lgId;
+  String _formatAddress(geo.Placemark p) {
+    final parts = [
+      p.street,
+      p.subLocality,
+      p.locality,
+      p.subAdministrativeArea,
+      p.administrativeArea,
+    ];
+    final cleaned = parts
+        .where((e) => e != null && e!.trim().isNotEmpty)
+        .map((e) => e!.trim())
+        .toList();
+    return cleaned.join(', ');
+  }
 
-    if (stId != null) {
-      selectedStateName =
-          states.firstWhere((e) => e['id'] == stId)['name'] as String?;
-    }
-    if (lgId != null) {
-      selectedLgaName =
-          lgas.firstWhere((e) => e['id'] == lgId)['name'] as String?;
-    }
+  void selectingForContinue(GeoState? state, GeoLga? lga) {
+    selectedStateId = state?.id;
+    selectedStateName = state?.displayName;
+
+    selectedLgaId = lga?.id;
+    selectedLgaName = lga?.name;
   }
 
   void _continue() {
@@ -189,6 +210,13 @@ class _EmergencyLocationScreenState extends State<EmergencyLocationScreen> {
       );
       return;
     }
+
+    final ctrl = Provider.of<EmergencyFlowController>(context, listen: false);
+    ctrl.setLocation(
+      state: selectedStateName ?? '',
+      lga: selectedLgaName ?? '',
+      position: detectedPosition,
+    );
 
     Navigator.pushNamed(
       context,
@@ -206,128 +234,241 @@ class _EmergencyLocationScreenState extends State<EmergencyLocationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final ctrl = Provider.of<EmergencyFlowController>(context);
+    final filteredStates = states.where((s) {
+      final name = s.displayName.toLowerCase();
+      return name.contains(searchQuery.toLowerCase()) ||
+          s.name.toLowerCase().contains(searchQuery.toLowerCase());
+    }).toList();
+    final currentStateId = selectedStateId;
+    final stateLgas = currentStateId == null
+        ? lgas
+        : _geo.lgasForState(currentStateId);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Auto Location Detection')),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: AppColors.brandBlue.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: const Icon(Icons.gps_fixed,
-                          color: AppColors.brandBlue),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        status,
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                    ),
-                    if (locating)
-                      const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                  ],
+            Row(
+              children: [
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.arrow_back),
                 ),
+                const SizedBox(width: 6),
+                const Text('Select Location',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF22C55E), Color(0xFF16A34A)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    width: 86,
+                    height: 86,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.navigation,
+                        color: Colors.white, size: 40),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Finding You...',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 18),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    locating ? 'Using GPS' : status,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                  if (detectedAddress != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      detectedAddress!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: 160,
+                    child: ElevatedButton(
+                      onPressed: _autoLocate,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppColors.brandGreen,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                      ),
+                      child: const Text('Detect Location'),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Select Your Area',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            TextField(
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.search),
+                hintText: 'Search state or LGA...',
+              ),
+              onChanged: (v) => setState(() => searchQuery = v),
             ),
-            const SizedBox(height: 10),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: loadingLookups
-                    ? const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(24.0),
-                          child: CircularProgressIndicator(),
-                        ),
-                      )
-                    : Column(
-                        children: [
-                          DropdownButtonFormField<int>(
-                            value: selectedStateId,
-                            decoration:
-                                const InputDecoration(labelText: 'Select State'),
-                            items: states
-                                .map((s) => DropdownMenuItem<int>(
-                                      value: s['id'],
-                                      child: Text(s['name'] ?? ''),
-                                    ))
-                                .toList(),
-                            onChanged: (v) {
-                              setState(() {
-                                selectedStateId = v;
-                                selectedStateName = states
-                                    .firstWhere((e) => e['id'] == v)['name'];
-                              });
-                            },
-                          ),
-                          const SizedBox(height: 12),
-                          DropdownButtonFormField<int>(
-                            value: selectedLgaId,
-                            decoration:
-                                const InputDecoration(labelText: 'Select LGA'),
-                            items: lgas
-                                .map((g) => DropdownMenuItem<int>(
-                                      value: g['id'],
-                                      child: Text(g['name'] ?? ''),
-                                    ))
-                                .toList(),
-                            onChanged: (v) {
-                              setState(() {
-                                selectedLgaId = v;
-                                selectedLgaName = lgas
-                                    .firstWhere((e) => e['id'] == v)['name'];
-                              });
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: OutlinedButton(
-                                  onPressed: _autoLocate,
-                                  child: const Text('Try again'),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: ElevatedButton(
-                                  onPressed: _continue,
-                                  child: const Text('Next'),
-                                ),
-                              ),
-                            ],
-                          )
-                        ],
-                      ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.brandBlue),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.location_on, color: AppColors.brandBlue),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '${selectedLgaName ?? detectedLgaName ?? ctrl.selectedLga ?? 'Ikeja'}, ${selectedStateName ?? detectedStateName ?? ctrl.selectedState ?? 'Lagos State'}',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 12),
-            if (detectedLat != null)
+            if (detectedAddress != null) ...[
+              const SizedBox(height: 8),
               Text(
-                'GPS: ${detectedLat!.toStringAsFixed(5)}, ${detectedLng!.toStringAsFixed(5)}',
+                detectedAddress!,
                 style: const TextStyle(fontSize: 12, color: AppColors.muted),
               ),
+            ],
+            const SizedBox(height: 18),
+            const Text('Select State',
+                style: TextStyle(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            if (loadingLookups)
+              const Center(child: CircularProgressIndicator())
+            else
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 2.4,
+                ),
+                itemCount: filteredStates.length,
+                itemBuilder: (context, index) {
+                  final s = filteredStates[index];
+                  final isSelected = selectedStateId == s.id;
+                  return OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor:
+                          isSelected ? AppColors.brandBlue : Colors.white,
+                      foregroundColor:
+                          isSelected ? Colors.white : AppColors.ink,
+                      side: BorderSide(
+                        color: isSelected
+                            ? AppColors.brandBlue
+                            : AppColors.border,
+                      ),
+                    ),
+                    onPressed: () {
+                      final stateLgaList = _geo.lgasForState(s.id);
+                      final firstLga =
+                          stateLgaList.isNotEmpty ? stateLgaList.first : null;
+                      setState(() {
+                        selectedStateId = s.id;
+                        selectedStateName = s.displayName;
+                        selectedLgaId = firstLga?.id;
+                        selectedLgaName = firstLga?.name;
+                      });
+                    },
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(s.displayName),
+                    ),
+                  );
+                },
+              ),
+            const SizedBox(height: 16),
+            if (selectedStateName != null)
+              Text('Select LGA in $selectedStateName',
+                  style: const TextStyle(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            ...stateLgas.map((g) {
+              final isSelected = selectedLgaId == g.id;
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor:
+                        isSelected ? AppColors.brandBlue : Colors.white,
+                    foregroundColor:
+                        isSelected ? Colors.white : AppColors.ink,
+                    side: BorderSide(
+                      color: isSelected
+                          ? AppColors.brandBlue
+                          : AppColors.border,
+                    ),
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      selectedLgaId = g.id;
+                      selectedLgaName = g.name;
+                    });
+                  },
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(g.name),
+                  ),
+                ),
+              );
+            }),
+            const SizedBox(height: 90),
           ],
+        ),
+      ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        child: SizedBox(
+          height: 54,
+          child: ElevatedButton(
+            onPressed: (selectedStateId != null && selectedLgaId != null)
+                ? _continue
+                : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.brandBlue,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            child: const Text('Confirm Location'),
+          ),
         ),
       ),
     );

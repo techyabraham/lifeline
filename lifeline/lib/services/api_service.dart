@@ -48,6 +48,7 @@ class ApiService {
   // --------------------------------------------------
   // STATES (taxonomy: state)
   // --------------------------------------------------
+  @Deprecated("Use GeoDataService (local dataset).")
   Future<List<Map<String, dynamic>>> fetchStates() async {
     return _fetchPaged('state');
   }
@@ -55,6 +56,7 @@ class ApiService {
   // --------------------------------------------------
   // LGAs (taxonomy: lga)
   // --------------------------------------------------
+  @Deprecated("Use GeoDataService (local dataset).")
   Future<List<Map<String, dynamic>>> fetchLgas() async {
     return _fetchPaged('lga');
   }
@@ -62,6 +64,7 @@ class ApiService {
   // --------------------------------------------------
   // LGAs BY STATE (if parent relationship exists)
   // --------------------------------------------------
+  @Deprecated("Use GeoDataService (local dataset).")
   Future<List<Map<String, dynamic>>> fetchLgasByState(int stateId) async {
     return _fetchPaged('lga', query: {'parent': stateId.toString()});
   }

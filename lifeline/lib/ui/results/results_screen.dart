@@ -1,9 +1,10 @@
 // lib/ui/results/results_screen.dart
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../services/api_service.dart';
+import '../../services/call_service.dart';
 import '../../models/emergency_contact.dart';
 import '../calling/calling_screen.dart';
 
@@ -119,29 +120,17 @@ class _ResultsScreenState extends State<ResultsScreen> {
   }
 
   Future<void> _dial(EmergencyContact c) async {
-    final uri = Uri(scheme: 'tel', path: c.phoneNumber);
-
-    if (await canLaunchUrl(uri)) {
-      // Optional: trigger notifications here if enabled
-      if (_notifyContacts) {
-        // hook for SMS / server notification
-      }
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) =>
-              CallingScreen(providerName: c.name, phone: c.phoneNumber),
-        ),
-      );
-
-      await Future.delayed(const Duration(milliseconds: 250));
-      await launchUrl(uri);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to place call')),
-      );
+    if (_notifyContacts) {
+      // hook for SMS / server notification
     }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CallingScreen(providerName: c.name, phone: c.phoneNumber),
+      ),
+    );
+    await CallService.call(context, c.phoneNumber);
   }
 
   Future<void> _openMaps(EmergencyContact c) async {

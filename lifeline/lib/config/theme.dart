@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const Color brandBlue = Color(0xFF0B5ED7);
-  static const Color brandBlueDark = Color(0xFF0A4BB3);
-  static const Color brandRed = Color(0xFFE53935);
-  static const Color brandGreen = Color(0xFF19B45B);
-  static const Color brandOrange = Color(0xFFF59E0B);
+  static const Color brandBlue = Color(0xFF0047AB);
+  static const Color brandBlueDark = Color(0xFF0056D2);
+  static const Color brandRed = Color(0xFFFF3B30);
+  static const Color brandGreen = Color(0xFF34C759);
+  static const Color brandOrange = Color(0xFFFFCC00);
   static const Color ink = Color(0xFF0F172A);
-  static const Color muted = Color(0xFF5B6777);
+  static const Color muted = Color(0xFF6B7280);
   static const Color surface = Color(0xFFFFFFFF);
-  static const Color canvas = Color(0xFFF3F5F9);
-  static const Color border = Color(0xFFE5E9F2);
+  static const Color canvas = Color(0xFFF9FAFB);
+  static const Color border = Color(0xFFE5E7EB);
   static const Color navy = Color(0xFF0B1A3A);
 }
 
