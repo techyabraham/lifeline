@@ -1,8 +1,8 @@
 // lib/ui/widgets/contact_card.dart
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
-import '../../config/theme.dart';
+import '../../config/design_system.dart';
+import 'design_widgets.dart';
 import '../../models/contact_model.dart';
 import '../../services/call_service.dart';
 
@@ -13,10 +13,6 @@ class ContactCard extends StatelessWidget {
     super.key,
     required this.contact,
   });
-
-  // ------------------------------------------------------------
-  // ACTIONS
-  // ------------------------------------------------------------
 
   void _shareContact() {
     final message = '${contact.agency} (${contact.category})\n'
@@ -30,57 +26,106 @@ class ContactCard extends StatelessWidget {
     await CallService.call(context, contact.phone);
   }
 
-  // ------------------------------------------------------------
-  // UI
-  // ------------------------------------------------------------
+  Color _accentColor() {
+    final key = contact.category.toLowerCase();
+    if (key.contains('police')) return AppDesignColors.primary;
+    if (key.contains('fire')) return AppDesignColors.danger;
+    if (key.contains('health') || key.contains('hospital')) {
+      return AppDesignColors.success;
+    }
+    if (key.contains('frsc') || key.contains('road')) {
+      return AppDesignColors.warning;
+    }
+    return AppDesignColors.primary;
+  }
+
   @override
   Widget build(BuildContext context) {
-    Color color;
-    switch (contact.category.toLowerCase()) {
-      case 'police':
-        color = AppColors.brandBlue;
-        break;
-      case 'fire':
-      case 'fire service':
-        color = AppColors.brandRed;
-        break;
-      case 'health':
-      case 'hospital':
-        color = AppColors.brandGreen;
-        break;
-      case 'frsc':
-        color = AppColors.brandOrange;
-        break;
-      default:
-        color = AppColors.muted;
-    }
+    final accent = _accentColor();
 
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+        boxShadow: AppShadows.subtle,
       ),
-      child: ListTile(
-        leading: Icon(Icons.local_phone, color: color),
-        title: Text(
-          contact.agency,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Text('${contact.lga}, ${contact.state}'),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              tooltip: 'Share',
-              onPressed: _shareContact,
-              icon: const Icon(Icons.share),
-            ),
-            IconButton(
-              tooltip: 'Call now',
-              onPressed: () => _callNow(context),
-              icon: Icon(Icons.call, color: color),
-            ),
-          ],
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: accent,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.local_phone, color: Colors.white, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            contact.agency,
+                            style: AppTextStyles.h3,
+                          ),
+                        ),
+                        if (contact.verified)
+                          const PillBadge(
+                            label: 'Verified',
+                            background: Color(0x1A34C759),
+                            foreground: AppDesignColors.success,
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${contact.lga}, ${contact.state}',
+                      style: AppTextStyles.bodyMuted,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _callNow(context),
+                  icon: const Icon(Icons.call, size: 18),
+                  label: const Text('Call'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: accent,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadii.md),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                onPressed: _shareContact,
+                icon: const Icon(Icons.share),
+                style: IconButton.styleFrom(
+                  backgroundColor: AppDesignColors.gray100,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadii.md),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

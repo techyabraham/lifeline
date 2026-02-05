@@ -1,12 +1,13 @@
 // lib/ui/search/search_screen.dart
 import 'package:flutter/material.dart';
-import '../../config/theme.dart';
+import '../../config/design_system.dart';
 import '../../services/api_service.dart';
 import '../../services/geo_data_service.dart';
 import '../../repositories/contacts_repository.dart';
 import '../../models/emergency_contact.dart';
 import '../../models/contact_model.dart';
 import '../widgets/contact_card.dart';
+import '../widgets/design_widgets.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -155,12 +156,25 @@ class _SearchScreenState extends State<SearchScreen> {
         child: Column(
           children: [
             Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadii.lg),
+                side: const BorderSide(color: AppDesignColors.gray200),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
                     DropdownButtonFormField<int>(
-                      decoration: const InputDecoration(labelText: 'Select State'),
+                      decoration: InputDecoration(
+                        labelText: 'Select State',
+                        filled: true,
+                        fillColor: AppDesignColors.gray50,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadii.md),
+                          borderSide: const BorderSide(color: AppDesignColors.gray200),
+                        ),
+                      ),
                       value: selectedStateId,
                       items: states
                           .map(
@@ -180,7 +194,15 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<int>(
-                      decoration: const InputDecoration(labelText: 'Select LGA'),
+                      decoration: InputDecoration(
+                        labelText: 'Select LGA',
+                        filled: true,
+                        fillColor: AppDesignColors.gray50,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadii.md),
+                          borderSide: const BorderSide(color: AppDesignColors.gray200),
+                        ),
+                      ),
                       value: selectedLgaId,
                       items: _filteredLgas
                           .map(
@@ -202,7 +224,7 @@ class _SearchScreenState extends State<SearchScreen> {
             const SizedBox(height: 8),
             Expanded(
               child: loading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const LoadingState(message: 'Loading contacts...')
                   : error != null
                       ? Center(child: Text(error!))
                       : contacts.isEmpty
@@ -221,8 +243,8 @@ class _SearchScreenState extends State<SearchScreen> {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.border),
+                borderRadius: BorderRadius.circular(AppRadii.md),
+                border: Border.all(color: AppDesignColors.gray200),
               ),
               child: const Text('Ad goes here'),
             ),

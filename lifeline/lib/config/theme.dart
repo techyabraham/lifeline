@@ -15,7 +15,7 @@ class AppColors {
 }
 
 final ThemeData lightTheme = ThemeData(
-  fontFamily: 'Poppins',
+  fontFamily: 'Inter',
   colorScheme: const ColorScheme.light(
     primary: AppColors.brandBlue,
     secondary: AppColors.brandRed,
@@ -99,7 +99,7 @@ final ThemeData lightTheme = ThemeData(
 
 final ThemeData darkTheme = ThemeData(
   brightness: Brightness.dark,
-  fontFamily: 'Poppins',
+  fontFamily: 'Inter',
   colorScheme: const ColorScheme.dark(
     primary: AppColors.brandBlue,
     secondary: AppColors.brandRed,

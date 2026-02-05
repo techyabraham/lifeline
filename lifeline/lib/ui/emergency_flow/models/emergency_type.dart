@@ -1,6 +1,5 @@
 // lib/ui/emergency_flow/models/emergency_type.dart
 import 'package:flutter/material.dart';
-import '../../../config/theme.dart';
 
 class EmergencyType {
   final String id;

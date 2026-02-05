@@ -1,7 +1,7 @@
 // lib/ui/home/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../config/theme.dart';
+import '../../config/design_system.dart';
 import '../emergency_flow/flow_controller.dart';
 import '../emergency_flow/models/emergency_type.dart';
 
@@ -18,48 +18,39 @@ class HomeScreen extends StatelessWidget {
     return Stack(
       children: [
         SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 6),
               const Text(
                 'Welcome back',
-                style: TextStyle(color: AppColors.muted, fontSize: 12),
+                style: AppTextStyles.bodyMuted,
               ),
               const SizedBox(height: 4),
-              const Text(
-                'Stay Safe',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
-              ),
+              const Text('Stay Safe', style: AppTextStyles.h1),
               const SizedBox(height: 16),
               InkWell(
                 onTap: () => Navigator.pushNamed(context, '/emergency/location'),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(AppRadii.lg),
                 child: Container(
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      )
-                    ],
+                    borderRadius: BorderRadius.circular(AppRadii.lg),
+                    boxShadow: AppShadows.subtle,
                   ),
                   child: Row(
                     children: [
                       Container(
-                        width: 40,
-                        height: 40,
+                        width: 44,
+                        height: 44,
                         decoration: BoxDecoration(
-                          color: AppColors.brandBlue.withOpacity(0.12),
+                          color: AppDesignColors.primary.withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.location_on,
-                            color: AppColors.brandBlue),
+                            color: AppDesignColors.primary),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -67,23 +58,65 @@ class HomeScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text('Current Location',
-                                style: TextStyle(
-                                    fontSize: 12, color: AppColors.muted)),
-                            Text(locationLabel,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.w600)),
+                                style: AppTextStyles.bodyMuted),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(locationLabel,
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w600)),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0x1A34C759),
+                                    borderRadius:
+                                        BorderRadius.circular(AppRadii.pill),
+                                  ),
+                                  child: const Text('? GPS',
+                                      style: TextStyle(
+                                          fontSize: 10,
+                                          color: AppDesignColors.success)),
+                                )
+                              ],
+                            ),
                           ],
                         ),
                       ),
-                      const Icon(Icons.chevron_right, color: AppColors.muted),
+                      const Icon(Icons.chevron_right,
+                          color: AppDesignColors.gray400),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 22),
-              const Text('Emergency Services',
-                  style: TextStyle(fontWeight: FontWeight.w700)),
-              const SizedBox(height: 10),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppDesignColors.danger, Color(0xFFFF4B42)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(AppRadii.lg),
+                ),
+                child: Row(
+                  children: const [
+                    Icon(Icons.warning_amber_rounded, color: Colors.white),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'PANIC MODE\nPress & hold for 3 seconds',
+                        style: TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text('Emergency Services', style: AppTextStyles.h3),
+              const SizedBox(height: 12),
               GridView.count(
                 crossAxisCount: 2,
                 crossAxisSpacing: 12,
@@ -104,22 +137,40 @@ class HomeScreen extends StatelessWidget {
                 }).toList(),
               ),
               const SizedBox(height: 22),
-              const Text('Nearest Help Centers',
-                  style: TextStyle(fontWeight: FontWeight.w700)),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(AppRadii.lg),
+                  boxShadow: AppShadows.subtle,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.people, color: AppDesignColors.primary),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'Your Trusted Circle',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pushNamed(context, '/contacts/trusted'),
+                      child: const Text('Manage'),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 22),
+              const Text('Nearest Help Centers', style: AppTextStyles.h3),
               const SizedBox(height: 10),
               ..._recentCenters.map((c) => Container(
                     margin: const EdgeInsets.only(bottom: 10),
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        )
-                      ],
+                      borderRadius: BorderRadius.circular(AppRadii.lg),
+                      boxShadow: AppShadows.subtle,
                     ),
                     child: Row(
                       children: [
@@ -133,11 +184,13 @@ class HomeScreen extends StatelessWidget {
                               const SizedBox(height: 2),
                               Text(c['number']!,
                                   style: const TextStyle(
-                                      fontSize: 12, color: AppColors.muted)),
+                                      fontSize: 12,
+                                      color: AppDesignColors.gray500)),
                             ],
                           ),
                         ),
-                        const Icon(Icons.chevron_right, color: AppColors.muted),
+                        const Icon(Icons.chevron_right,
+                            color: AppDesignColors.gray400),
                       ],
                     ),
                   )),
@@ -145,12 +198,8 @@ class HomeScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.brandBlue, AppColors.brandBlueDark],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(18),
+                  gradient: AppGradients.primary,
+                  borderRadius: BorderRadius.circular(AppRadii.lg),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -169,17 +218,25 @@ class HomeScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 80),
             ],
           ),
         ),
         Positioned(
-          bottom: 16,
-          right: 16,
-          child: FloatingActionButton(
-            onPressed: () => Navigator.pushNamed(context, '/emergency/location'),
-            backgroundColor: AppColors.brandRed,
-            child: const Icon(Icons.warning_amber_rounded),
+          bottom: 20,
+          right: 20,
+          child: GestureDetector(
+            onTap: () => Navigator.pushNamed(context, '/emergency/location'),
+            child: Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: AppDesignColors.danger,
+                shape: BoxShape.circle,
+                boxShadow: AppShadows.soft,
+              ),
+              child: const Icon(Icons.warning_amber_rounded,
+                  color: Colors.white, size: 28),
+            ),
           ),
         ),
       ],
@@ -207,29 +264,43 @@ final List<_ServiceItem> _services = [
     title: 'Police',
     description: 'Report crimes & emergencies',
     icon: Icons.shield,
-    color: AppColors.brandBlue,
+    color: AppDesignColors.primary,
     type: defaultEmergencyTypes.firstWhere((t) => t.id == 'police'),
   ),
   _ServiceItem(
     title: 'Fire Service',
     description: 'Fire & rescue emergencies',
     icon: Icons.local_fire_department,
-    color: AppColors.brandRed,
+    color: AppDesignColors.danger,
     type: defaultEmergencyTypes.firstWhere((t) => t.id == 'fire'),
   ),
   _ServiceItem(
     title: 'Hospital',
     description: 'Medical emergencies',
     icon: Icons.favorite,
-    color: AppColors.brandGreen,
+    color: AppDesignColors.success,
     type: defaultEmergencyTypes.firstWhere((t) => t.id == 'medical'),
   ),
   _ServiceItem(
     title: 'FRSC',
     description: 'Road accidents & safety',
     icon: Icons.directions_car,
-    color: AppColors.brandOrange,
+    color: AppDesignColors.warning,
     type: defaultEmergencyTypes.firstWhere((t) => t.id == 'road'),
+  ),
+  _ServiceItem(
+    title: 'Amotekun',
+    description: 'Regional security corps',
+    icon: Icons.shield_rounded,
+    color: AppDesignColors.amotekun,
+    type: defaultEmergencyTypes.firstWhere((t) => t.id == 'amotekun'),
+  ),
+  _ServiceItem(
+    title: 'Mental Health',
+    description: 'Psychological support',
+    icon: Icons.psychology,
+    color: AppDesignColors.mental,
+    type: defaultEmergencyTypes.firstWhere((t) => t.id == 'mental_health'),
   ),
 ];
 
@@ -258,12 +329,16 @@ class _ServiceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(AppRadii.lg),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadii.lg),
+            boxShadow: AppShadows.subtle,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -281,7 +356,7 @@ class _ServiceCard extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 description,
-                style: const TextStyle(fontSize: 11, color: AppColors.muted),
+                style: const TextStyle(fontSize: 11, color: AppDesignColors.gray500),
               ),
             ],
           ),

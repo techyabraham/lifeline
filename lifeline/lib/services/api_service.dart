@@ -45,6 +45,10 @@ class ApiService {
     return _fetchPaged('service_category');
   }
 
+  Future<List<Map<String, dynamic>>> fetchCategories() async {
+    return fetchServiceCategories();
+  }
+
   // --------------------------------------------------
   // STATES (taxonomy: state)
   // --------------------------------------------------

@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart' as geo;
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
-import '../../../config/theme.dart';
+import '../../../config/design_system.dart';
 import '../../../services/geo_data_service.dart';
+import '../../widgets/design_widgets.dart';
 import '../flow_controller.dart';
 
 class EmergencyLocationScreen extends StatefulWidget {
@@ -246,230 +247,239 @@ class _EmergencyLocationScreenState extends State<EmergencyLocationScreen> {
         : _geo.lgasForState(currentStateId);
 
     return Scaffold(
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+      backgroundColor: AppDesignColors.gray50,
+      body: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 50, 20, 20),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              boxShadow: AppShadows.subtle,
+            ),
+            child: Column(
               children: [
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.arrow_back),
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.arrow_back),
+                    ),
+                    const SizedBox(width: 6),
+                    const Text('Select Location', style: AppTextStyles.h2),
+                  ],
                 ),
-                const SizedBox(width: 6),
-                const Text('Select Location',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 12),
+                TextField(
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.search, color: AppDesignColors.gray400),
+                    hintText: 'Search state or LGA...',
+                    filled: true,
+                    fillColor: AppDesignColors.gray50,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadii.lg),
+                      borderSide: const BorderSide(color: AppDesignColors.gray200),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadii.lg),
+                      borderSide: const BorderSide(color: AppDesignColors.primary, width: 1.5),
+                    ),
+                  ),
+                  onChanged: (v) => setState(() => searchQuery = v),
+                ),
               ],
             ),
-            const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF22C55E), Color(0xFF16A34A)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(18),
-              ),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    width: 86,
-                    height: 86,
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      shape: BoxShape.circle,
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF22C55E), Color(0xFF16A34A)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(AppRadii.xl),
                     ),
-                    child: const Icon(Icons.navigation,
-                        color: Colors.white, size: 40),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 70,
+                          height: 70,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.navigation, color: Colors.white, size: 34),
+                        ),
+                        const SizedBox(height: 10),
+                        const Text(
+                          'Finding You...',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 18),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          locating ? 'Using GPS' : status,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                        const SizedBox(height: 12),
+                        SecondaryButton(
+                          label: 'Try again',
+                          icon: Icons.my_location,
+                          onPressed: _autoLocate,
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    'Finding You...',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 18),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    locating ? 'Using GPS' : status,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(AppRadii.xl),
+                      border: Border.all(color: AppDesignColors.primary),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.location_on, color: AppDesignColors.primary),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '${selectedLgaName ?? detectedLgaName ?? ctrl.selectedLga ?? 'Ikeja'}, ${selectedStateName ?? detectedStateName ?? ctrl.selectedState ?? 'Lagos State'}',
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   if (detectedAddress != null) ...[
                     const SizedBox(height: 8),
                     Text(
                       detectedAddress!,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 11,
-                      ),
+                      style: AppTextStyles.bodyMuted,
                     ),
                   ],
+                  const SizedBox(height: 20),
+                  Text('Select State', style: AppTextStyles.h3),
                   const SizedBox(height: 12),
-                  SizedBox(
-                    width: 160,
-                    child: ElevatedButton(
-                      onPressed: _autoLocate,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: AppColors.brandGreen,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(24),
+                  if (loadingLookups)
+                    const LoadingState(message: 'Loading states...')
+                  else
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 2.1,
+                      ),
+                      itemCount: filteredStates.length,
+                      itemBuilder: (context, index) {
+                        final s = filteredStates[index];
+                        final isSelected = selectedStateId == s.id;
+                        return OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: isSelected
+                                ? AppDesignColors.primary
+                                : Colors.white,
+                            foregroundColor: isSelected
+                                ? Colors.white
+                                : AppDesignColors.gray900,
+                            side: BorderSide(
+                              color: isSelected
+                                  ? AppDesignColors.primary
+                                  : AppDesignColors.gray200,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(AppRadii.md),
+                            ),
+                          ),
+                          onPressed: () {
+                            final stateLgaList = _geo.lgasForState(s.id);
+                            final firstLga =
+                                stateLgaList.isNotEmpty ? stateLgaList.first : null;
+                            setState(() {
+                              selectedStateId = s.id;
+                              selectedStateName = s.displayName;
+                              selectedLgaId = firstLga?.id;
+                              selectedLgaName = firstLga?.name;
+                            });
+                          },
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(s.displayName),
+                          ),
+                        );
+                      },
+                    ),
+                  const SizedBox(height: 16),
+                  if (selectedStateName != null)
+                    Text('Select LGA in $selectedStateName',
+                        style: AppTextStyles.h3),
+                  const SizedBox(height: 12),
+                  ...stateLgas.map((g) {
+                    final isSelected = selectedLgaId == g.id;
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: isSelected
+                              ? AppDesignColors.primary
+                              : Colors.white,
+                          foregroundColor: isSelected
+                              ? Colors.white
+                              : AppDesignColors.gray900,
+                          side: BorderSide(
+                            color: isSelected
+                                ? AppDesignColors.primary
+                                : AppDesignColors.gray200,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppRadii.md),
+                          ),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            selectedLgaId = g.id;
+                            selectedLgaName = g.name;
+                          });
+                        },
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(g.name),
                         ),
                       ),
-                      child: const Text('Detect Location'),
-                    ),
-                  ),
+                    );
+                  }),
+                  const SizedBox(height: 90),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.search),
-                hintText: 'Search state or LGA...',
-              ),
-              onChanged: (v) => setState(() => searchQuery = v),
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.brandBlue),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.location_on, color: AppColors.brandBlue),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '${selectedLgaName ?? detectedLgaName ?? ctrl.selectedLga ?? 'Ikeja'}, ${selectedStateName ?? detectedStateName ?? ctrl.selectedState ?? 'Lagos State'}',
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (detectedAddress != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                detectedAddress!,
-                style: const TextStyle(fontSize: 12, color: AppColors.muted),
-              ),
-            ],
-            const SizedBox(height: 18),
-            const Text('Select State',
-                style: TextStyle(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            if (loadingLookups)
-              const Center(child: CircularProgressIndicator())
-            else
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: 2.4,
-                ),
-                itemCount: filteredStates.length,
-                itemBuilder: (context, index) {
-                  final s = filteredStates[index];
-                  final isSelected = selectedStateId == s.id;
-                  return OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor:
-                          isSelected ? AppColors.brandBlue : Colors.white,
-                      foregroundColor:
-                          isSelected ? Colors.white : AppColors.ink,
-                      side: BorderSide(
-                        color: isSelected
-                            ? AppColors.brandBlue
-                            : AppColors.border,
-                      ),
-                    ),
-                    onPressed: () {
-                      final stateLgaList = _geo.lgasForState(s.id);
-                      final firstLga =
-                          stateLgaList.isNotEmpty ? stateLgaList.first : null;
-                      setState(() {
-                        selectedStateId = s.id;
-                        selectedStateName = s.displayName;
-                        selectedLgaId = firstLga?.id;
-                        selectedLgaName = firstLga?.name;
-                      });
-                    },
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(s.displayName),
-                    ),
-                  );
-                },
-              ),
-            const SizedBox(height: 16),
-            if (selectedStateName != null)
-              Text('Select LGA in $selectedStateName',
-                  style: const TextStyle(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            ...stateLgas.map((g) {
-              final isSelected = selectedLgaId == g.id;
-              return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    backgroundColor:
-                        isSelected ? AppColors.brandBlue : Colors.white,
-                    foregroundColor:
-                        isSelected ? Colors.white : AppColors.ink,
-                    side: BorderSide(
-                      color: isSelected
-                          ? AppColors.brandBlue
-                          : AppColors.border,
-                    ),
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      selectedLgaId = g.id;
-                      selectedLgaName = g.name;
-                    });
-                  },
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(g.name),
-                  ),
-                ),
-              );
-            }),
-            const SizedBox(height: 90),
-          ],
-        ),
-      ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-        child: SizedBox(
-          height: 54,
-          child: ElevatedButton(
-            onPressed: (selectedStateId != null && selectedLgaId != null)
-                ? _continue
-                : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.brandBlue,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-            child: const Text('Confirm Location'),
           ),
-        ),
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              boxShadow: AppShadows.subtle,
+            ),
+            child: PrimaryButton(
+              label: 'Confirm Location',
+              onPressed: (selectedStateId != null && selectedLgaId != null)
+                  ? _continue
+                  : null,
+            ),
+          ),
+        ],
       ),
     );
   }

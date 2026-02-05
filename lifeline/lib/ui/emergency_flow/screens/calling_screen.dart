@@ -1,6 +1,6 @@
 // lib/ui/emergency_flow/screens/calling_screen.dart
 import 'package:flutter/material.dart';
-import '../../../config/theme.dart';
+import '../../../config/design_system.dart';
 import '../../../services/call_service.dart';
 
 class EmergencyCallingScreen extends StatefulWidget {
@@ -43,95 +43,111 @@ class _EmergencyCallingScreenState extends State<EmergencyCallingScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [AppColors.brandBlue, AppColors.brandBlueDark],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            colors: [Color(0xFF0B1220), Color(0xFF000000)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
         ),
         child: SafeArea(
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ScaleTransition(
-                  scale: Tween<double>(begin: 0.9, end: 1.08).animate(
-                    CurvedAnimation(
-                      parent: _pulseCtrl,
-                      curve: Curves.easeInOut,
-                    ),
-                  ),
-                  child: Container(
-                    padding: const EdgeInsets.all(32),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.16),
-                    ),
-                    child: const Icon(
-                      Icons.phone_in_talk,
-                      color: Colors.white,
-                      size: 86,
-                    ),
+          child: Column(
+            children: [
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ScaleTransition(
+                        scale: Tween<double>(begin: 0.95, end: 1.08).animate(
+                          CurvedAnimation(
+                            parent: _pulseCtrl,
+                            curve: Curves.easeInOut,
+                          ),
+                        ),
+                        child: Container(
+                          width: 120,
+                          height: 120,
+                          decoration: BoxDecoration(
+                            color: AppDesignColors.primary,
+                            shape: BoxShape.circle,
+                            boxShadow: AppShadows.soft,
+                          ),
+                          child: Center(
+                            child: Text(
+                              widget.providerName.isNotEmpty
+                                  ? widget.providerName[0].toUpperCase()
+                                  : 'L',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 36,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        widget.providerName,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        widget.phone,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      const Text(
+                        'Calling...',
+                        style: TextStyle(color: Colors.white54, fontSize: 13),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 28),
-                const Text(
-                  'Calling...',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 18,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  widget.providerName,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  widget.phone,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Colors.white70,
-                  ),
-                ),
-                const SizedBox(height: 36),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.brandRed,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 32, vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 28),
+                child: Column(
+                  children: [
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        width: 76,
+                        height: 76,
+                        decoration: BoxDecoration(
+                          color: AppDesignColors.danger,
+                          shape: BoxShape.circle,
+                          boxShadow: AppShadows.soft,
+                        ),
+                        child: const Icon(Icons.call_end, color: Colors.white, size: 34),
+                      ),
                     ),
-                  ),
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.call_end),
-                  label: const Text('Cancel Call'),
-                ),
-                const SizedBox(height: 14),
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.pop(context);
-                  },
-                  child: const Text(
-                    'Try next provider',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontWeight: FontWeight.w600,
+                    const SizedBox(height: 12),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text(
+                        'Try next provider',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
-                  ),
-                )
-              ],
-            ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),

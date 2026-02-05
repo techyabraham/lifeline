@@ -1,6 +1,8 @@
 // lib/ui/emergency/emergency_selection.dart
 import 'package:flutter/material.dart';
+import '../../config/design_system.dart';
 import '../../services/api_service.dart';
+import '../widgets/design_widgets.dart';
 
 class EmergencySelection extends StatefulWidget {
   const EmergencySelection({super.key});
@@ -35,9 +37,6 @@ class _EmergencySelectionState extends State<EmergencySelection>
     super.dispose();
   }
 
-  /// --------------------------------------------------
-  /// FETCH SERVICE CATEGORIES (taxonomy: service_category)
-  /// --------------------------------------------------
   Future<void> _loadCategories() async {
     setState(() {
       _loading = true;
@@ -45,7 +44,6 @@ class _EmergencySelectionState extends State<EmergencySelection>
     });
 
     try {
-      // Direct REST call (taxonomy endpoint)
       final cats = await _api.fetchServiceCategories();
 
       _categories = cats
@@ -76,8 +74,6 @@ class _EmergencySelectionState extends State<EmergencySelection>
       arguments: {
         'categoryId': category['id'],
         'categoryName': category['name'],
-
-        // Location
         'lgaId': locationArgs['lgaId'],
         'lgaName': locationArgs['lgaName'],
         'stateId': locationArgs['stateId'],
@@ -95,38 +91,51 @@ class _EmergencySelectionState extends State<EmergencySelection>
         rawArgs is Map<String, dynamic> ? rawArgs : {};
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('What do you need?'),
-      ),
+      backgroundColor: AppDesignColors.gray50,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              // LOCATION CARD
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_back),
+                  ),
+                  const SizedBox(width: 6),
+                  const Text('What do you need?', style: AppTextStyles.h2),
+                ],
+              ),
+              const SizedBox(height: 10),
               if ((locationArgs['lgaName'] ?? '').toString().isNotEmpty)
-                Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.place),
-                    title: Text(
-                      'Location: ${locationArgs['lgaName'] ?? locationArgs['stateName']}',
-                    ),
-                    trailing: TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Change'),
-                    ),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(AppRadii.lg),
+                    border: Border.all(color: AppDesignColors.primary),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.place, color: AppDesignColors.primary),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Location: ${locationArgs['lgaName'] ?? locationArgs['stateName']}',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Change'),
+                      ),
+                    ],
                   ),
                 ),
-
               const SizedBox(height: 12),
-
-              // LOADING
               if (_loading)
-                const Expanded(
-                  child: Center(child: CircularProgressIndicator()),
-                )
-
-              // ERROR
+                const Expanded(child: LoadingState(message: 'Loading categories...'))
               else if (_error != null)
                 Expanded(
                   child: Center(
@@ -144,8 +153,6 @@ class _EmergencySelectionState extends State<EmergencySelection>
                     ),
                   ),
                 )
-
-              // GRID
               else
                 Expanded(
                   child: GridView.builder(
@@ -156,7 +163,7 @@ class _EmergencySelectionState extends State<EmergencySelection>
                       crossAxisCount: 2,
                       crossAxisSpacing: 14,
                       mainAxisSpacing: 14,
-                      childAspectRatio: 1.05,
+                      childAspectRatio: 0.95,
                     ),
                     itemBuilder: (context, i) {
                       final cat = _categories[i];
@@ -196,12 +203,12 @@ class _EmergencySelectionState extends State<EmergencySelection>
 
   Color _pickColor(int i) {
     const palette = [
-      Color(0xFFEF4444),
-      Color(0xFF3B82F6),
+      AppDesignColors.danger,
+      AppDesignColors.primary,
       Color(0xFFFB923C),
-      Color(0xFF16A34A),
-      Color(0xFFFBBF24),
-      Color(0xFF8B5CF6),
+      AppDesignColors.success,
+      AppDesignColors.warning,
+      AppDesignColors.mental,
       Color(0xFF06B6D4),
     ];
     return palette[i % palette.length];
@@ -236,22 +243,30 @@ class _CategoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      borderRadius: BorderRadius.circular(16),
-      color: color.withOpacity(0.12),
+      borderRadius: BorderRadius.circular(AppRadii.lg),
+      color: Colors.white,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadii.lg),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 18),
+          padding: const EdgeInsets.all(16),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 46, color: color),
-              const SizedBox(height: 12),
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: Colors.white, size: 24),
+              ),
+              const SizedBox(height: 10),
               Text(
                 title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: const TextStyle(fontWeight: FontWeight.w700),
               ),
             ],
           ),

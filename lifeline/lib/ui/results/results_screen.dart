@@ -6,6 +6,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../services/api_service.dart';
 import '../../services/call_service.dart';
 import '../../models/emergency_contact.dart';
+import '../../config/design_system.dart';
+import '../widgets/design_widgets.dart';
 import '../calling/calling_screen.dart';
 
 class ResultsScreen extends StatefulWidget {
@@ -26,7 +28,6 @@ class _ResultsScreenState extends State<ResultsScreen> {
 
   bool _notifyContacts = false;
 
-  // Route arguments
   int? categoryId;
   String? categoryName;
   int? lgaId;
@@ -121,7 +122,9 @@ class _ResultsScreenState extends State<ResultsScreen> {
 
   Future<void> _dial(EmergencyContact c) async {
     if (_notifyContacts) {
-      // hook for SMS / server notification
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Notifying your contacts...')),
+      );
     }
 
     Navigator.push(
@@ -156,194 +159,246 @@ class _ResultsScreenState extends State<ResultsScreen> {
   @override
   Widget build(BuildContext context) {
     final title = categoryName ?? 'Emergency';
+    final locationText = lgaName ?? stateName ?? 'Unknown location';
 
     return Scaffold(
-      appBar: AppBar(title: Text('Nearest â€¢ $title')),
-      body: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          children: [
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.place),
-                title: Text(lgaName ?? stateName ?? 'Unknown location'),
-                subtitle: const Text('Sorted by distance'),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
+      backgroundColor: AppDesignColors.gray50,
+      body: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(20, 52, 20, 20),
+            decoration: BoxDecoration(
+              gradient: AppGradients.service(AppDesignColors.primary),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    const Text('Notify'),
-                    Switch(
-                      value: _notifyContacts,
-                      onChanged: (v) => setState(() => _notifyContacts = v),
+                    InkWell(
+                      onTap: () => Navigator.pop(context),
+                      borderRadius: BorderRadius.circular(AppRadii.md),
+                      child: const Padding(
+                        padding: EdgeInsets.all(6.0),
+                        child: Icon(Icons.arrow_back, color: Colors.white),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Nearest • $title',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ],
                 ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    const Icon(Icons.location_on, color: Colors.white70, size: 16),
+                    const SizedBox(width: 6),
+                    Text(locationText, style: const TextStyle(color: Colors.white70)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(AppRadii.lg),
+                      border: Border.all(color: AppDesignColors.gray200),
+                      boxShadow: AppShadows.subtle,
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.notifications, color: AppDesignColors.primary),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text('Notify emergency contacts', style: AppTextStyles.body),
+                        ),
+                        Switch(
+                          value: _notifyContacts,
+                          onChanged: (v) => setState(() => _notifyContacts = v),
+                          activeColor: AppDesignColors.primary,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  if (_loading)
+                    const Expanded(
+                      child: LoadingState(message: 'Loading providers...'),
+                    )
+                  else if (_error != null)
+                    Expanded(
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(_error!, style: const TextStyle(color: Colors.red)),
+                            const SizedBox(height: 8),
+                            PrimaryButton(
+                              label: 'Retry',
+                              onPressed: _loadContacts,
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else if (_contacts.isEmpty)
+                    const Expanded(
+                      child: Center(
+                        child: Text('No emergency providers found'),
+                      ),
+                    )
+                  else
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: _contacts.length,
+                        itemBuilder: (_, index) {
+                          final c = _contacts[index];
+                          final dist = _distanceKm[c.id];
+
+                          return _ProviderCard(
+                            contact: c,
+                            distanceKm: dist,
+                            rank: index + 1,
+                            onCall: () => _dial(c),
+                            onMap: () => _openMaps(c),
+                          );
+                        },
+                      ),
+                    ),
+                ],
               ),
             ),
-            const SizedBox(height: 12),
-            if (_loading)
-              const Expanded(
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else if (_error != null)
-              Expanded(
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(_error!, style: const TextStyle(color: Colors.red)),
-                      const SizedBox(height: 8),
-                      ElevatedButton(
-                        onPressed: _loadContacts,
-                        child: const Text('Retry'),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            else if (_contacts.isEmpty)
-              const Expanded(
-                child: Center(
-                  child: Text('No emergency providers found'),
-                ),
-              )
-            else
-              Expanded(
-                child: ListView.builder(
-                  itemCount: _contacts.length,
-                  itemBuilder: (_, index) {
-                    final c = _contacts[index];
-                    final dist = _distanceKm[c.id];
-
-                    final emoji = index == 0
-                        ? 'ðŸ¥‡'
-                        : index == 1
-                            ? 'ðŸ¥ˆ'
-                            : index == 2
-                                ? 'ðŸ¥‰'
-                                : '';
-
-                    return _FacilityCard(
-                      contact: c,
-                      distanceKm: dist,
-                      rankEmoji: emoji,
-                      onCall: () => _dial(c),
-                      onMap: () => _openMaps(c),
-                    );
-                  },
-                ),
-              ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _FacilityCard extends StatelessWidget {
+class _ProviderCard extends StatelessWidget {
   final EmergencyContact contact;
   final double? distanceKm;
-  final String rankEmoji;
+  final int rank;
   final VoidCallback onCall;
   final VoidCallback onMap;
 
-  const _FacilityCard({
+  const _ProviderCard({
     required this.contact,
     required this.distanceKm,
-    required this.rankEmoji,
+    required this.rank,
     required this.onCall,
     required this.onMap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+    final etaMinutes = distanceKm != null
+        ? (distanceKm! / 30 * 60).round()
+        : null;
+    final badge = rank == 1 ? '??' : rank == 2 ? '??' : rank == 3 ? '??' : null;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+        boxShadow: AppShadows.subtle,
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Text(
-                          contact.name,
-                          style: const TextStyle(
-                              fontSize: 17, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 6),
-                        Row(children: [
-                          const Icon(Icons.navigation,
-                              size: 14, color: Colors.green),
-                          const SizedBox(width: 4),
-                          Text(
-                            distanceKm != null
-                                ? '${distanceKm!.toStringAsFixed(1)} km'
-                                : 'â€”',
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                          const SizedBox(width: 10),
-                          if (contact.isVerified)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.green.shade50,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Row(children: [
-                                Icon(Icons.verified,
-                                    size: 14, color: Colors.green),
-                                SizedBox(width: 4),
-                                Text('Verified',
-                                    style: TextStyle(
-                                        fontSize: 12, color: Colors.green)),
-                              ]),
-                            ),
-                        ]),
-                        const SizedBox(height: 6),
-                        Text(contact.address,
+                        if (badge != null)
+                          Text(badge, style: const TextStyle(fontSize: 18)),
+                        if (badge != null) const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            contact.name,
                             style: const TextStyle(
-                                fontSize: 12, color: Colors.black54)),
-                        if (contact.secondaryPhone != null &&
-                            contact.secondaryPhone!.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Text('Alt: ${contact.secondaryPhone}',
-                                style: const TextStyle(
-                                    fontSize: 12, color: Colors.black45)),
+                                fontWeight: FontWeight.w700, fontSize: 16),
                           ),
-                      ]),
-                ),
-                Text(rankEmoji, style: const TextStyle(fontSize: 28)),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: onCall,
-                    icon: const Icon(Icons.call),
-                    label: const Text('CALL NOW'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
+                        ),
+                        if (contact.isVerified) const VerifiedBadge(),
+                      ],
                     ),
+                    const SizedBox(height: 6),
+                    Text(contact.phoneNumber,
+                        style: const TextStyle(
+                            fontSize: 12, color: AppDesignColors.gray500)),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(Icons.navigation,
+                            size: 14, color: AppDesignColors.success),
+                        const SizedBox(width: 6),
+                        Text(
+                          distanceKm != null
+                              ? '${distanceKm!.toStringAsFixed(1)} km'
+                              : '—',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        const SizedBox(width: 12),
+                        const Icon(Icons.access_time,
+                            size: 14, color: AppDesignColors.primary),
+                        const SizedBox(width: 6),
+                        Text(
+                          etaMinutes != null ? '$etaMinutes min' : '—',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: PrimaryButton(
+                  label: 'Call Now',
+                  icon: Icons.call,
+                  color: AppDesignColors.success,
+                  onPressed: onCall,
+                ),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton(
+                onPressed: onMap,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppDesignColors.gray700,
+                  side: const BorderSide(color: AppDesignColors.gray200),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadii.md),
                   ),
                 ),
-                const SizedBox(width: 8),
-                OutlinedButton(
-                  onPressed: onMap,
-                  child: const Icon(Icons.map),
-                ),
-              ],
-            )
-          ],
-        ),
+                child: const Icon(Icons.navigation),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
