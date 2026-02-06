@@ -1,0 +1,8 @@
+node_modules
+dist
+.env
+.data
+pnpm-lock.yaml
+data/import_checkpoint.json
+data/import_errors.csv
+data/states_lgas_imported.json

@@ -1,0 +1,88 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProviderType {
+  HOSPITAL
+  POLICE
+  FRSC
+  FIRE
+  AGENCY
+  OTHER
+}
+
+enum ProviderStatus {
+  active
+  inactive
+}
+
+model State {
+  id        Int       @id
+  name      String    @unique
+  slug      String    @unique
+  lgas      Lga[]
+  providers Provider[]
+}
+
+model Lga {
+  id        Int       @id
+  stateId   Int       @map("state_id")
+  name      String
+  slug      String
+  state     State     @relation(fields: [stateId], references: [id])
+  providers Provider[]
+
+  @@unique([stateId, slug])
+  @@index([stateId])
+}
+
+model Provider {
+  id            String         @id @default(uuid())
+  externalId    String?        @map("external_id")
+  providerType  ProviderType   @map("provider_type")
+  category      String?
+  name          String
+  phonePrimary  String?        @map("phone_primary")
+  phoneSecondary String?       @map("phone_secondary")
+  email         String?
+  address       String?
+  stateId       Int            @map("state_id")
+  lgaId         Int            @map("lga_id")
+  latitude      Float
+  longitude     Float
+  geo           Unsupported("geography(Point,4326)")?
+  source        String?
+  verified      Boolean        @default(false)
+  status        ProviderStatus @default(active)
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  state         State          @relation(fields: [stateId], references: [id])
+  lga           Lga            @relation(fields: [lgaId], references: [id])
+  aliases       ProviderAlias[]
+
+  @@unique([name, providerType, lgaId, latitude, longitude])
+  @@index([providerType])
+  @@index([category])
+  @@index([stateId])
+  @@index([lgaId])
+  @@index([verified])
+  @@index([status])
+}
+
+model ProviderAlias {
+  id         Int      @id @default(autoincrement())
+  providerId String   @map("provider_id")
+  alias      String
+  provider   Provider @relation(fields: [providerId], references: [id])
+
+  @@unique([providerId, alias])
+  @@index([alias])
+}
